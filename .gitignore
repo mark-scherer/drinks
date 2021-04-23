@@ -1,3 +1,6 @@
+# custom fields
+configs/private.json
+
 # Logs
 logs
 *.log

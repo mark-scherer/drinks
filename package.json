@@ -1,0 +1,27 @@
+{
+  "name": "drinks",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mark-scherer/drinks.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mark-scherer/drinks/issues"
+  },
+  "homepage": "https://github.com/mark-scherer/drinks#readme",
+  "dependencies": {
+    "bluebird": "^3.7.2",
+    "cheerio": "^1.0.0-rc.5",
+    "lodash": "^4.17.21",
+    "pg": "^8.5.1",
+    "request": "^2.88.2",
+    "yesql": "^5.0.0"
+  }
+}

@@ -1,0 +1,10 @@
+{
+    "pg_config": {
+      "host": "",
+      "port": -1,
+      "database": "",
+      "user": "",
+      "password": ""
+    }
+}
+  
