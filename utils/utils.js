@@ -24,19 +24,27 @@ const config = function(public_config, private_config) {
   }
 }
 
-const sanitize = function(raw_string) {
-  return raw_string.toLowerCase()
+const sanitize = function(raw_string, options={}) {
+  // first remove unnecessary chars
+  let result = raw_string.toLowerCase()
   .replace(/\'/g, '')
   .replace(/\"/g, '')
   .replace(/\./g, '')
   .replace(/\-/g, '_')
-  .replace(/\(.*\)/g, '')         // remove all content in parentheses
-  .split(',')[0]                  // remove all content after first comma
-  // .replace(/( of )/g, ' ')     // remove unnecessary words
-  .replace(/^( )*of( )*/, '')     // remove leading 'of's
-  .trim()                         
-  .replace(/( ){2,}/g, ' ')       // remove all double spaces
-  .replace(/ /g, '_')
+
+  // remove unncessary clauses, words
+  if (!options.keep_parentheses) {
+    result = result.replace(/\(.*\)/g, '')         // remove all content in parentheses
+  }
+  result = result.split(',')[0]   // remove all content after first comma
+    .replace(/^( )*of( )*/, '')     // remove leading 'of's
+  
+  // remove spaces
+  result = result.trim()                         
+    .replace(/( ){2,}/g, ' ')       // remove all double spaces
+    .replace(/ /g, '_')
+
+  return result
 }
 
 module.exports = {

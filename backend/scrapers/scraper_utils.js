@@ -16,6 +16,16 @@ const units = {
     base_unit: 'cup',
     conversion: 2
   },
+  qt: { 
+    regex: '(qt(s)?)|(quart(s)?)',
+    base_unit: 'cup',
+    conversion: 4
+  },
+  gal: { 
+    regex: '(gal(s)?)|(gallon(s)?)',
+    base_unit: 'cup',
+    conversion: 16
+  },
   tblsp: {
     base_unit: 'oz',
     conversion: 0.5
@@ -56,13 +66,18 @@ const units = {
     conversion: 1
   },
 
+  // english mass
+  lb: { regex: '(pound(s)?)|(lb(s)?)' }, 
+
   // metric mass
   g: { regex: 'g(r)?' },
 
   // packaging units
   bottle: { regex: 'bottle(s)?' },
   can: { regex: 'can(s)?' },
+  glass: { regex: 'glass(es)?' },
   fifth: { regex: 'fifth(s)?' },
+  package: { regex: 'package(s)?' },
 
   // misc
   cube: { regex: 'cube(s)?' },
@@ -80,7 +95,23 @@ const units = {
   pinch: { regex: 'pinch(es)?' },
   scoop: { regex: 'scoop(s)?' },
   slice: { regex: 'slice(s)?' },
-  twist: { regex: 'twist(s)?' }
+  twist: { regex: 'twist(s)?' },
+  wedge: { regex: 'wedge(s)?' },
+  peel: { regex: 'peel(s)?' }
+}
+
+const written_quantites = {
+  1: ['one', 'a']
+}
+
+const sub_written_quantity = function(raw_ingredient) {
+  _.forEach(written_quantites, (writings, quantity) => {
+    _.forEach(writings, w => {
+      raw_ingredient = raw_ingredient.replace(new RegExp(`(^| )${w}( |$)`), ` ${quantity} `)
+      if ((new RegExp(`(^| )${w}( |$)`)).test(raw_ingredient)) console.log(`subbed quantity: ${JSON.stringify({ raw_ingredient, quantity, w })}`)
+    })
+  })
+  return raw_ingredient
 }
 
 const parse_quantity = function(raw_quantity, raw_units) {
@@ -97,7 +128,7 @@ const parse_quantity = function(raw_quantity, raw_units) {
 
   } else {
     const unit_matches = _.filter(_.toPairs(units), unit_entry => {
-      const unit_regex = new RegExp(unit_entry[1].regex)
+      const unit_regex = new RegExp(`^${unit_entry[1].regex}$`)
       return raw_units && unit_entry[1].regex && unit_regex.test(raw_units)
     })
 
@@ -119,21 +150,44 @@ const parse_quantity = function(raw_quantity, raw_units) {
   }
 }
 
+// juiceable ingredients known to be in the DB
+  // scrapers can reclassify these ingredients as their juice even if not labeled as such
+const common_juices = [
+  'lemon_juice',
+  'lime_juice',
+  'orange_juice',
+]
+
 // note: map not list for quicker access
+// note: order matters!
 const modifications = {
+  lots: true,
+  very: true,
+  
   fresh: true,
+  ripe: true,
+  hot: true,
+  
   pure: true,
+  strong: true,
+  dry: true,
+
   sliced: true,
   frozen: true,
   juiced: true,
   crushed: true,
-  crumbled: true
+  crumbled: true,
+  chilled: true,
+
+  large: true,
+  small: true,
+  whole: true,
 }
 
 const parse_ingredient = function(ingredient_str) {
   let found_mods = []
   _.forEach(modifications, (value, mod) => {
-    const mod_regex = new RegExp(`( )*${mod}( )*`)
+    const mod_regex = new RegExp(`((( )+)|(^))${mod}(( )+|($))`) // complicated, but ensure only capture mod if is its own word
     if (mod_regex.test(ingredient_str)) {
       found_mods.push(mod)
       ingredient_str = ingredient_str.replace(mod_regex, ' ')
@@ -172,7 +226,9 @@ const parse_mixed_fraction = function(mixed_frac) {
 
 module.exports = {
   units,
+  sub_written_quantity,
   parse_quantity,
+  common_juices,
   modifications,
   parse_ingredient,
   parse_mixed_fraction,
