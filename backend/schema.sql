@@ -53,10 +53,11 @@ create table drink_ingredients (
     id serial primary key,
     drink text not null references drinks (drink),
     ingredient text not null references ingredients (ingredient),
-    modifications text[],
+    premods text[],
+    postmods text[],
     quantity text,
     units text,
-    unique (drink, ingredient, modifications)
+    unique (drink, ingredient, premods, postmods)
 )
 
 
@@ -72,7 +73,7 @@ select category, count(*) from ingredients group by category order by count(*) d
 select array_length(related, 1) as related_count, count(*) from ingredients group by array_length(related, 1) order by array_length(related, 1) desc;
 -- check suspicious (unknown category, unknown alcohol, no related)
 select ingredient, category, description, alcohol, related from ingredients where category = 'other_/_unknown';
-select ingredient, category, description, alcohol from ingredients where alcohol is null;
+select round(alcohol, 1) as rounded_alcohol, count(*) from ingredients group by round(alcohol, 1) order by round(alcohol, 1) desc
 select ingredient, category, description, alcohol from ingredients where array_length(related, 1)  is null;
 -- check all names
 select ingredient from ingredients order by ingredient;
@@ -89,7 +90,7 @@ with rounded_ratings as (
     select drink, round(source_avg_rating) as rating from drinks
 ) select rating, count(*) from rounded_ratings group by rating order by rating desc
 with rounded_rating_counts as (
-    select drink, round(source_rating_count, -1) as ratings from drinks
+    select drink, round(source_rating_count, -2) as ratings from drinks
 ) select ratings, count(*) from rounded_rating_counts group by ratings order by ratings desc
 with contributors as (
     select source_contributor, count(*) as contributions from drinks group by source_contributor
@@ -105,24 +106,11 @@ select drinks.drink, array_agg(drink_ingredients.ingredient) as ingredients from
 select distinct quantity from drink_ingredients order by quantity
 select distinct units from drink_ingredients order by units
 -- check suspicious: null quanity, null units, qunaity = 'fill', no ratings
-select drink, ingredient, modifications, quantity, units from drink_ingredients where quantity is null order by ingredient
-select drink, ingredient, modifications, quantity, units from drink_ingredients where units is null and quantity != 'fill' order by ingredient, modifications
-select drink, ingredient, modifications, quantity, units from drink_ingredients where quantity = 'fill' order by ingredient
+select drink, ingredient, premods, postmods, quantity, units from drink_ingredients where quantity is null order by ingredient
+select drink, ingredient, premods, postmods, quantity, units from drink_ingredients where units is null and quantity != 'fill' order by ingredient, premods, postmods
+select drink, ingredient, premods, postmods, quantity, units from drink_ingredients where quantity = 'fill' order by ingredient
 -- check all mods
-select drink, ingredient, modifications, quantity, units from drink_ingredients where array_length(modifications, 1) > 0 order by ingredient, modifications
-
---- known issues ---
--- juice problem
-select drink, ingredient, modifications, quantity, units from drink_ingredients where modifications @> array['juice'] order by ingredient, modifications;
-with juiced_drinks as (
-    select * from drink_ingredients where modifications @> array['juice']
-) select category, count(*) from juiced_drinks join drinks on juiced_drinks.drink = drinks.drink group by category order by count(*) desc
-with juiced_drinks as (
-    select * from drink_ingredients where modifications @> array['juice']
-) select glass, count(*) from juiced_drinks join drinks on juiced_drinks.drink = drinks.drink group by glass order by count(*) desc
-with juiced_drinks as (
-    select * from drink_ingredients where modifications @> array['juice']
-) select round(source_avg_rating) as rating, count(*) from juiced_drinks join drinks on juiced_drinks.drink = drinks.drink group by round(source_avg_rating) order by round(source_avg_rating) desc
-with juiced_drinks as (
-    select * from drink_ingredients where modifications @> array['juice']
-) select round(source_rating_count, -1) as rating, count(*) from juiced_drinks join drinks on juiced_drinks.drink = drinks.drink group by round(source_rating_count, -1) order by round(source_rating_count, -1) desc
+select drink, premods, ingredient from drink_ingredients where array_length(premods, 1) > 0 order by premods, ingredient
+select drink, ingredient, postmods from drink_ingredients where array_length(postmods, 1) > 0 order by postmods, ingredient
+select premod, array_agg(distinct ingredient) as ingredients, count(*) from (select ingredient, unnest(premods) as premod from drink_ingredients) unnested_mods group by premod order by count(*) desc
+select postmod, array_agg(distinct ingredient) as ingredients, count(*) from (select ingredient, unnest(postmod) as postmod from drink_ingredients) unnested_mods group by postmod order by count(*) desc

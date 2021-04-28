@@ -15,10 +15,7 @@
 
 /*
   To do
-    1. figure out mod display issue
-      - which mods go before and which after?
-      - any other mod display concerns? Brands displayed differently? some mods not displayed?
-    2. scrape full site, iterate regexs
+    1. scrape full site, iterate regexs
 */
 
 'use strict'
@@ -32,6 +29,7 @@ const _ = require('lodash')
 const utils = require('../../utils/utils')
 const scraper_utils = require('./scraper_utils')
 const { POINT_CONVERSION_COMPRESSED } = require('constants')
+const { indexOf } = require('lodash')
 const config = utils.config(require('../../configs/public.json'), require('../../configs/private.json'))
 
 const BASE_URL = 'https://www.webtender.com'
@@ -111,13 +109,15 @@ const INSERT_DRINK_INGREDIENT_QUERY = `
   insert into drink_ingredients (
     drink,
     ingredient,
-    modifications,
+    premods,
+    postmods,
     quantity,
     units
   ) values (
     :drink,
     :ingredient,
-    :modifications,
+    :premods,
+    :postmods,
     :quantity,
     :units
   )`
@@ -135,7 +135,7 @@ const scrape_drink_list = async function() {
     $('li').map((i, el) => {
       const drink_html = $(el)
       drink_list.push({
-        drink: utils.sanitize(drink_html.text(), {keep_parentheses: true}),
+        drink: utils.sanitize(drink_html.text(), {keep_parentheses: true, keep_commas: true}),
         link: $('a', drink_html).attr('href')
       })
       continue_loop = true
@@ -143,18 +143,20 @@ const scrape_drink_list = async function() {
     })
     console.log(`...scraped ${drink_list.length} drink names`)
   }
-  return drink_list.slice(0,500)
+  // return drink_list.slice(0,3000)
+  return drink_list
 }
 
 
 
 const parse_ingredient_info = function(raw_ingredient, link, link_text) {
-  const prefix_regex = '((fill with )|(top with )|(pour in )|(shake with )|(float ))?'
+  const prefix_regex = '((fill (with )?)|(top (with )?)|(pour (in )?)|(shake (with )?)|(blend with )|(float ))?'
   const mixed_frac_regex = '((([0-9]+ )?[0-9]*/?[0-9]+)|([0-9]+.[0-9]+))'
   const units_regex = `(${_.map(scraper_utils.units, (unit_info, unit) => unit_info.regex ? `(${unit_info.regex})` : `(${unit})`).join('|')})`
   const ingredient_mods_regex = _.map(scraper_utils.modifications, (value, mod) => `(${mod} )?`).join('')
   const ingredient_name_regex = '[a-zäéñ0-9- \(\),\'\.]+'
-  const fill_action_regex = '((fill)|(top( it)?( up| off)?)) ((with)|(to top)|(rest of glass) )?'
+  const fill_action_regex = '((fill)|(top(( it)|( the drink)?)))(( up)|( off))? ((blender )|(bottle )|(glass )|(remainder ))?((with)|(to top)|(rest of glass) )?'
+  const fill_action_dq_regex = new RegExp('half')
   const other_action_regex = '((shake with)|(float) )?'
   
   // <quantity> <unit> <ingredient>
@@ -164,19 +166,19 @@ const parse_ingredient_info = function(raw_ingredient, link, link_text) {
   const quantity_ingredient_unit_regex = new RegExp(`^${prefix_regex}${mixed_frac_regex} ${ingredient_name_regex} ${units_regex}$`)
 
   // <action> <ingredient>
-  const action_ingredient_regex = new RegExp(`^${fill_action_regex}${ingredient_name_regex}$`)
+  const fill_ingredient_regex = new RegExp(`^${fill_action_regex}${ingredient_name_regex}$`)
 
   // <non-unit ingredient>
     // ingredients where unit AND quantity is not necessary
     // expanded on an as-needed basis
     // some of these are 'unprofessional' but can be filtered by later selection algos (null units and null quantity)
   const non_unit_ingredient_regex = new RegExp(`^${other_action_regex}${ingredient_mods_regex}(` +
-      '(ice( cubes)?)|' +
-      '((whipped )?cream)|(sugar)|(nutmeg)|' + 
-      '(((orange)|(grapefruit)|(pineapple)) juice)|(raspberries)|' +
+      '(ice( cubes)?)|(salt)|(cayenne pepper)|' +
+      '((whipped )?cream)|((granulated )?(powdered )?(superfine )?sugar)|(nutmeg)|(milk)|(chocolate syrup)|' + 
+      '(((orange)|(grapefruit)|(pineapple)|(cranberry)|(grape)) juice)|(raspberries)|(strawberr(y|(ies)))|(mint( lea(f|(ves))))|' +
       '(club soda)|((carbonated )?(soda )?(tonic )?water)|(ginger ale)|(sprite)|(7-up)|' +
-      '(coca(-)?cola)|(schweppes russchian)|(lemonade)|(coffee)|' + 
-      '((((malibu)|(dark)) )?rum)|(vodka)|(gin)|(tequila)|(southern comfort)|(champagne)|' +
+      '((coca(-)?)?cola)|(schweppes russchian)|(lemonade)|(coffee)|(tea)|' + 
+      '((((malibu)|(dark)) )?rum)|(vodka)|(gin)|(tequila)|(whisky)|(southern comfort)|(champagne)|' +
       '(vermouth)|((blue )?curacao)|(((peppermint)|(blueberry)|(root beer)) schnapps)|' +
       "(grenadine)|(kahlua)|(amaretto)|(bailey's irish cream)|(banana liqueur)|(midori melon liqueur)|(creme de noyaux)|(grand marnier)|(sambuca)|(campari)|(triple sec)|" +
       '(sweet and sour( mix)?)|(sour mix)|(pina colada mix)' +
@@ -185,9 +187,11 @@ const parse_ingredient_info = function(raw_ingredient, link, link_text) {
   // <quantity> <non-unit ingredient>
     // ingredients where unit is implicit BUT quantity is specified
   const quantity_non_unit_ingredient_regex = new RegExp(`^${other_action_regex}${mixed_frac_regex} ${ingredient_mods_regex}(` +
-      '(banana(s)?)|(peach(es)?)|(strawberr(y|ies))|((maraschino )?cherr(y|ies))|(carrot(s)?)|' +
-      '(ice( cube(s)?)?)|(egg( white)?)|' +
-      '(mint sprig(s)?)|(wormwood twig(s)?)|(cardamom pod(s)?)|(clove(s)?)' + 
+      '(banana(s)?)|(peach(es)?)|(strawberr(y|ies))|(raspberr(y|(ies)))|((maraschino )?cherr(y|ies))|(watermelon(s)?)|' +
+      '((black )?(green )?(cocktail )?olive(s)?)|(carrot(s)?)|' + 
+      '((vanilla )?bean(s)?)|(cayenne pepper)|(oreo cookie)|' +
+      '(ice( cube(s)?)?)|(egg(( white)|( yolk))?)|' +
+      '(mint ((sprig(s)?)|(lea(f|(ves)))))|(wormwood twig(s)?)|(cardamom ((pod(s)?)|(seed(s))))|(clove(s)?)' + 
     ')$')
 
   // special ingredient format: juice of <quantity> <ingredient>
@@ -196,6 +200,7 @@ const parse_ingredient_info = function(raw_ingredient, link, link_text) {
   // console.log(JSON.stringify({ 
   //   quantity_unit_ingredient_regex: quantity_unit_ingredient_regex.toString(), 
   //   quantity_ingredient_unit_regex: quantity_ingredient_unit_regex.toString(),
+  //   fill_ingredient_regex: fill_ingredient_regex.toString(),
   //   non_unit_ingredient_regex: non_unit_ingredient_regex.toString(), 
   //   quantity_non_unit_ingredient_regex: quantity_non_unit_ingredient_regex.toString() 
   // }))
@@ -204,14 +209,19 @@ const parse_ingredient_info = function(raw_ingredient, link, link_text) {
   let quantity, ingredient
   raw_ingredient = raw_ingredient
     .toLowerCase()
+    .replace(/\(.*\)/g, '')              // must be first, otherwise only closing paren can be removed
+    .replace(/\(/g, '')                  // remove unmatched paren 
+    .replace(/\)/g, '')                  // remove unmatched paren
     .split(',')[0]
     .split(' or ')[0]
     .replace(/^add /, '')
+    .replace(/^and /, '')
     .replace(/^app(ro)?x(\.)? /, '')
     .replace(/^about /, '')
     .replace(/ pulp( |-)free /g, ' ')
     .replace(/ your choice/g, '')
-    .replace(/\(.*\)/g, '')              // remove all content inside parentheses
+    .replace(/ & /, ' ')
+    .replace(/( ){2,}, ' '/)            // must be last after all others removed
   raw_ingredient = scraper_utils.sub_written_quantity(raw_ingredient)
     .trim()
 
@@ -234,7 +244,7 @@ const parse_ingredient_info = function(raw_ingredient, link, link_text) {
       utils.sanitize(spaces_split[spaces_split.length - 1])
     )
     ingredient  = scraper_utils.parse_ingredient(spaces_split.slice(quantity_space_count + 2, spaces_split.length - 1).join(' '))
-  } else if (action_ingredient_regex.test(raw_ingredient)) {
+  } else if (fill_ingredient_regex.test(raw_ingredient) && !fill_action_dq_regex.test(raw_ingredient)) {
     let prepped_ingredient = raw_ingredient
       .replace(new RegExp(fill_action_regex), '')
     quantity    = scraper_utils.parse_quantity('fill', null)
@@ -279,31 +289,51 @@ const parse_ingredient_info = function(raw_ingredient, link, link_text) {
   if (ingredient.ingredient !== link_text) {
     // for some common juices, want to ensure categorized by juice not juiced item
       // note: if only partially scraping on empty DB, may not insert all of known juices and may cause postgres insert error on some drinks that assume juices are in DB
-    const known_juice = ingredient.ingredient.includes('juice') && scraper_utils.common_juices.includes(ingredient.ingredient)
+    const known_juice_matches = _.filter(scraper_utils.common_juices, cj => ingredient.ingredient.includes(cj))
 
-    if (!known_juice) {
-      // check if can parse out a modification
-      if (ingredient.ingredient.includes(link_text)) {
-        const potential_mods = ingredient.ingredient.replace(new RegExp(`_${link_text}$`), '').replace(new RegExp(`_${link_text}_`), '').replace(new RegExp(`^${link_text}_`), '')
+    if (known_juice_matches.length == 0) {
+      // need to remove mods that are actually part of link text
+      ingredient.premods = _.filter(ingredient.premods, premod => !link_text.includes(premod))
+      ingredient.postmods = _.filter(ingredient.postmods, postmod => !link_text.includes(postmod))
+
+      // if link text is a subset of parsed ingredient, need to pull out more mods
+      const link_text_index = ingredient.ingredient.indexOf(link_text)
+      if (link_text_index > -1) {
+        const potential_mods = ingredient.ingredient.replace(new RegExp(`_${link_text}$`), '').replace(new RegExp(`_${link_text}_`), '_').replace(new RegExp(`^${link_text}_`), '')
           .replace(/_/g, ' ')
           .replace(/( ){2,}/g, ' ')
           .trim()
           .split(' ')
-        const mods_to_add = _.chain(potential_mods)
-          .map(mod => utils.sanitize(mod))
-          .filter(mod => mod.length > 0) // sanitize will remove extra words, leaving some empty strings here
-          .value()
-        ingredient.modifications.push(...mods_to_add)
+        _.forEach(potential_mods, mod => {
+          mod = utils.sanitize(mod)
+          if (mod.length > 0) { // sanitize will remove extra words, leaving some empty strings here
+            const mod_og_index = ingredient.ingredient.indexOf(mod)
+            if (mod_og_index < 0) throw Error(`did not find mod in string after removing link_text: ${JSON.stringify({ ingredient, mod, mod_og_index })}`)
+            if (mod_og_index < link_text_index) ingredient.premods.push(mod)
+            else ingredient.postmods.push(mod)
+          }
+        })
       }
       ingredient.ingredient = link_text
     } else {
       console.log(`reclassifying known common juice: ${JSON.stringify({ raw_ingredient, link_text, ingredient })}`)
+      ingredient.ingredient = known_juice_matches[0]
     }
+  }
+
+  // filter known premod bugs
+  ingredient.premods = _.filter(ingredient.premods, premod => !['ith', 'oz', 'and'].includes(premod) && !utils.is_numeric_str(premod))
+  const with_index = ingredient.premods.indexOf('with')
+  if (with_index > -1) ingredient.premods = ingredient.premods.slice(with_index + 1)
+
+  // reject know errors
+  if (_.some(ingredient.postmods, postmod => ['and', 'in', 'to'].includes(postmod))) {
+    throw Error(`not implemented to parse ingredient: ${raw_ingredient}`)
   }
 
   return {
     ..._.pick(quantity, ['units', 'quantity']),
-    ..._.pick(ingredient, ['ingredient', 'modifications']),
+    ..._.pick(ingredient, ['ingredient', 'premods', 'postmods']),
     link
   }
 }
@@ -324,8 +354,8 @@ const scrape_drink = async function(drink) {
       link = $(el).find('a').first().attr('href')
       link_text = utils.sanitize($(el).find('a').first().text())
     }
+
     const parsed_ingredient = parse_ingredient_info($(el).text().trim(), link, link_text)
-    
     ingredients_info.push(parsed_ingredient)
   })
 
@@ -343,8 +373,9 @@ const scrape_drink = async function(drink) {
   }
 
   const raw_rating = $("th:contains('Rating:')").next('td').text()
-  const source_avg_rating = parseFloat(raw_rating.split('-')[0])
-  const source_rating_count = parseInt(raw_rating.split('-')[1].replace('votes', ''))
+  const no_votes = raw_rating.includes('No votes')
+  const source_avg_rating = no_votes ? null : parseFloat(raw_rating.split('-')[0])
+  const source_rating_count = no_votes ? 0 : parseInt(raw_rating.split('-')[1].replace('votes', ''))
 
   const source_contributor = $("th:contains('Contributor:')").length > 0 ? utils.sanitize($("th:contains('Contributor:')").next('td').text()) :
     $("th:contains('Source:')").length > 0 ? utils.sanitize($("th:contains('Source:')").next('td').text()) : null

@@ -78,6 +78,7 @@ const units = {
   glass: { regex: 'glass(es)?' },
   fifth: { regex: 'fifth(s)?' },
   package: { regex: 'package(s)?' },
+  bag: { regex: 'bag(s)?' },
 
   // misc
   cube: { regex: 'cube(s)?' },
@@ -96,8 +97,10 @@ const units = {
   scoop: { regex: 'scoop(s)?' },
   slice: { regex: 'slice(s)?' },
   twist: { regex: 'twist(s)?' },
+  stick: { regex: 'stick(s)?' },
   wedge: { regex: 'wedge(s)?' },
-  peel: { regex: 'peel(s)?' }
+  peel: { regex: 'peel(s)?' },
+  chunk: { regex: 'chunk(s)?' }
 }
 
 const written_quantites = {
@@ -163,14 +166,11 @@ const common_juices = [
 const modifications = {
   lots: true,
   very: true,
-  
-  fresh: true,
-  ripe: true,
-  hot: true,
-  
-  pure: true,
-  strong: true,
-  dry: true,
+
+  large: true,
+  small: true,
+  whole: true,
+  medium: true,
 
   sliced: true,
   frozen: true,
@@ -178,24 +178,40 @@ const modifications = {
   crushed: true,
   crumbled: true,
   chilled: true,
-
-  large: true,
-  small: true,
-  whole: true,
+  
+  fresh: true,
+  ripe: true,
+  hot: true,
+  unbroken: true,
+  pure: true,
+  strong: true,
+  dry: true,
 }
 
-const parse_ingredient = function(ingredient_str) {
-  let found_mods = []
+const parse_ingredient = function(raw_ingredient_str) {
+  let uncategorized_mods = [], ingredient_str = raw_ingredient_str
   _.forEach(modifications, (value, mod) => {
     const mod_regex = new RegExp(`((( )+)|(^))${mod}(( )+|($))`) // complicated, but ensure only capture mod if is its own word
-    if (mod_regex.test(ingredient_str)) {
-      found_mods.push(mod)
+    const index = raw_ingredient_str.search(mod_regex)
+    if (index > -1) {
+      uncategorized_mods.push({
+        mod,
+        index
+      })
       ingredient_str = ingredient_str.replace(mod_regex, ' ')
     }
   })
+  const actual_ingredient_index = raw_ingredient_str.indexOf(ingredient_str)
+  if (actual_ingredient_index < 0) throw Error(`did not find ingredient in modified string: ${JSON.stringify({ raw_ingredient_str, ingredient_str, actual_ingredient_index, found_mods })}`)
 
+  let premods = [], postmods = []
+  _.forEach(uncategorized_mods, mod_info => {
+    if (mod_info.index < actual_ingredient_index) premods.push(mod_info.mod)
+    else postmods.push(mod_info.mod)
+  })
   return {
-    modifications: found_mods,
+    premods,
+    postmods,
     ingredient: utils.sanitize(ingredient_str)
   }
 }

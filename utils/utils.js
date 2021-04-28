@@ -36,8 +36,10 @@ const sanitize = function(raw_string, options={}) {
   if (!options.keep_parentheses) {
     result = result.replace(/\(.*\)/g, '')         // remove all content in parentheses
   }
-  result = result.split(',')[0]   // remove all content after first comma
-    .replace(/^( )*of( )*/, '')     // remove leading 'of's
+  if (!options.keep_commas) {
+    result = result.split(',')[0]   // remove all content after first comma
+  }
+  result = result.replace(/^( )*of( )*/, '')     // remove leading 'of's
   
   // remove spaces
   result = result.trim()                         
@@ -47,10 +49,15 @@ const sanitize = function(raw_string, options={}) {
   return result
 }
 
+const is_numeric_str = function(string) {
+  return !isNaN(string) && !isNaN(parseFloat(string))
+}
+
 module.exports = {
   request,
   config,
   sanitize,
+  is_numeric_str,
   
   // imported utils
   pg
