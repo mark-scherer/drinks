@@ -1,0 +1,164 @@
+##### Ingredient Specificity Scratch #####
+
+### 04/28/2021 ###
+
+- just finished first pass of full webtendder scraper
+- next is starting rec engine
+
+- definitions
+    - base alcohol: main liquor used as base of a drink
+    - generic base alcohol: class of base alcohol (ex: rum)
+    - specific base alcohol: specific type of base alcohol, usually ID'd by brand (Ex: bacardi rum)
+
+<- a few questions about ingredient specificity, mostly stemming from filtering by a base alcohol
+    1. given a generic base alcohol (ex: rum), can query for all reciepes including specific versions too (i.e. bacardi)
+    2. if user provides specific base alcohol (i.e. bacardi rum), can query filter
+        2.1. base alcohols that match the specific base alcohol
+        2.2. base alcohols that match the specific base alcohols & the generic base alcohols BUT not other specific base alcohols (ex: match bacardi & rum but not <other specific rum brand>)
+
+- how to separate drinks by 'base alcohol'
+    - by ingredient category:
+        1. base_spirit          : base alcohols, both generic and specific
+        2. liqueur_/_cordial    : alcoholic liquer mixes
+        3. other_spirit         : a mix of 1 & 2
+        4. mixer                : non-alcoholic mixes
+        5. wine_/_beer          : unclear if serves as 'base' of drinks
+        6. other_/_unknown      : misc other ingredients, almost exclusively non-alcoholic
+        <- breakdown of ingredient counts per category:
+            select category, count(*) from ingredients group by category order by count(*) desc;
+                    category      | count 
+                -------------------+-------
+                liqueur_/_cordial |   106
+                mixer             |    69
+                other_spirit      |    60
+                fruit_/_juice     |    57
+                base_spirit       |    52
+                flavoring_/_syrup |    45
+                wine_/_beer       |    32
+                other_/_unknown   |    27
+                herb_/_spice      |    19
+                garnish           |    16
+        <- random sample of ingredients by category: 
+            select ingredient from ingredients where category = 'other_/_unknown' order by random() limit 10;
+        <- breakdown of ingredients in a category by alcohol content:
+            select round(alcohol, 1), count(*) from ingredients where category = 'other_/_unknown' group by round(alcohol, 1) order by round(alcohol, 1) desc;
+        - are most drinks 'based' w/ a particular category?
+            1. base_spirit                  : ~60% have 1, ~30% have none, ~10% have multiple
+            2. liqueur_/_cordial            : ~40% have 1, ~40% have none, ~20% have multiple
+            3. other_spirit                 : ~25% have 1, ~70% have none, ~5% have multiple
+            4. wine_/_beer                  : ~10% have 1, ~90% have none, ~0% have multiple
+            5. base_spirit + other_spirit   : ~80% have 1, ~20% have none, ~0% have multiple
+            <- breakdown of drinks by number ingredients in a specific category
+                with category_counts as (
+                    select drink, count(*) as category_count from drink_ingredients join ingredients on drink_ingredients.ingredient = ingredients.ingredient group by drink, category having category = 'base_spirit' or category = 'other_spirit'
+                ) select category_count, count(*) as drink_count from drinks left join category_counts on drinks.drink = category_counts.drink group by category_count order by category_count desc
+    <- TAKEAWAYS
+        1. is not practical to strictly segrate drinks by 'base alcohols'
+            1.1. No clear divide of ingredients into 'base alcohols'
+            1.2. No way to separate recipes into always having 1 of a 'base alcohol' class of ingredients
+                - some will always have multiple, some will always have none
+        2. Cannot have user start by selecting a 'base alcohol'
+            2.1. no practical way to generate list of 'base alcohols'
+            2.2. will inevitably produce recipes with other 'base alcohols', seeming deciing the user
+        3. Should instead have user optionally select ingredients they want in ALL suggested drinks
+            3.1. can make it easiest to select 'base alcohols' but won't be limited to this
+            3.2. implies rec engine needs to accept a 'must_have' ingredient list and filter to only reciepes will ALL (or some?) of these ingredients
+
+- how to group specific base alcohols into generic base alcohols
+    <- now using 'base alcohol' as a loose term for the concept of generic base alcohols
+        - may use ingredient.category = 'base_spirit as a proxy
+    - do pre/post mods handle this for us?
+        - partially... premods/postmods by definition provide all the specificity required by the reciepes
+            - doubt the user will want further specificity
+            - could let them select ingredient then show available pre & post mods
+            <- but ingredients are too specific!
+                - how to know 'whiskey' contains 'whisky' and 'tennessee_whiskey'?
+        - could use predefined 'generic base alcohols' that include all ingredients that match a predefined regex: {
+            whiskey     : select ingredient, category from ingredients where ingredient ~ 'whisk(e)?y' order by ingredient,
+            rum         : select ingredient, category from ingredients where ingredient ~ 'rum' order by ingredient,
+        }
+        <- all distinct premod/postmod & ingredient combos for base_spirit ingredients
+            select distinct premods, drink_ingredients.ingredient from drink_ingredients join ingredients on drink_ingredients.ingredient = ingredients.ingredient where category = 'base_spirit' order by ingredient, premods
+            select distinct drink_ingredients.ingredient, postmods from drink_ingredients join ingredients on drink_ingredients.ingredient = ingredients.ingredient where category = 'base_spirit' order by ingredient, postmods
+    <- TAKEAWAYS
+        1. UI will have to be carefully designed around flaws in system
+            1.1. will need to be clear selecting 'must include' ingredients is OPTIONAL
+            1.2. will need to be clear can select MULTIPLE 'must include' ingredients
+            1.3. will need to be clear if ALL or ANY of 'must include' ingredients will be included in drinks
+        2. Cannot be confusing that ingredients will be included in predefined 'base alcohol' families and in actual categories
+            2.1. might be best if included ingredients disappear from further selection if their family is chosen
+            2.2. will need to make 'predefined base alcohol' groups and 'base_spirit' categories separate
+        3. Rec engine's 'must_include_some' and 'must_include_all' input divide is murkier
+            3.1. if family is included in 'must include all', will be multiple options but each drink will need to include one
+            3.2. cannot be separate inputs, must combine into one:
+                must_include: [[group_1_option_1, group_1_option_2, ...], [group_2_option_1], ...]
+                <- receipes must include one options from each first-level list
+            3.3. ingredient groups are only a frontend concept, will send backend computed 'must_include' list
+    
+<- 'specific' ingredients specified by ingredient name should be handled!
+    - user can select all of 'family' or specific ingredient to filter reciepes
+    - backend will filter by ingredient name and only show all qualifiying ingredients
+        - UNLESS: ingredient name specification is replicated in pre/postmods
+            - doesn't seem common... would mean source messed up linking
+            - also, could be solveable by regexing all ingredient's pre & post mods based on provided ingredient to look for other qualifiers
+
+- how to handle user filtering reciepes by pre/post mods conditions
+    - simple, UI can just allow them to further select from applicable pre/post mods
+    - rec engine then should accept pre/post mods fields and filter accordingly
+
+- how to stop from showing user recipes that have applicable specification in pre/postmods
+    - ex: don't show them bacardi-specific recipes if they don't say they have bacardi
+        - OR tell them to make one drink w/ bacardi and other drink w/ another rum, algo thinking they're both rum
+    - how often are pre/post mods inherit to item and not part of preparation?
+        <- seems like decent amount of time
+    <- see all pre/post mods
+        select distinct premods, postmods from drink_ingredients order by premods, postmods
+<- TAKEAWAYS
+    1. for now, assume user will interpret item-inherit pre/post mods as a suggestion
+        1.1. may need to find way to classify 'item-inherit pre/post-mods' so can:
+            - further filter ingredients by 'item-inherit pre/post-mods'
+            - mark in UI 'item-inherit pre/post-mods' are suggestions
+        <- 'item-inherit pre/post-mods': pre/postmods that are not part of preparation (like '(bacardi) rum' as opposed to '(chilled) x')
+
+- will 'preferred ingredients' and 'ingredients must be from' list also use base alcohol 'families'
+    - NO: family generalization is not desired for these lists
+        - familes categorize ingredients into generic groups allowing users to specify multiple choices at once
+        - 'preferred ingredients' and 'ingredients must be from' lists specify one specific item
+            - if user selects a specified ingredient, do not want to produce receipes with a similar specific ingredient
+            <- DO want to suggest recipes with a generalized form of that ingredient
+                - ex: specify have bacardi rum, want to suggest rum drinks
+    - familes can specify 'generic ingredient' list: ingredients that encompass all ingredients in group
+        - 'base alcohol family' json: {
+            whiskey: {
+                grouping_regex: 'whisk(e)?y',
+                parent_ingredients: ['whiskey', 'whisky']
+            }
+        } <- if user selects 'whiskey' family when specifying 'must_include_some' or 'must_include_all': all ingredients matching grouping_regex included as alternatives
+          <- if user selects any ingredient matching grouping_regex when specifying 'preferred ingredients' and 'ingredients must be from', parent_ingredients will be included as alternatives
+    - TAKEAWAYS
+        1. base alcohol family system does not directly translate to 'preferred ingredients' and 'ingredients must be from' inputs
+            1.1. instead, each family shoud have pre-defined parent_ingredients that are 'parents' to all ingredients in the family
+                - thus if user includes specific ingredient, can also include 'parent' ingredients
+
+- SUMMARY
+
+    1. should not ask user to specify 1 'base alcohol' to start drink filtering
+        1.1. instead, should ask for optional 'must include' list of any ingredient
+        1.2. 'must include' selection should be aided by predefined 'base alcohol families' that include all specific ingredients that satisfy a grouping_regex
+            - allows user to select at 'base alcohol' level instead of each specific ingredient in base alcohol family
+        1.3. user can options specify an ingredient's pre and postmods when adding to 'must include' list
+            - implies 'must_include' format: [[{group_1_option_1, group_1_option2}], [{group_2_only_option}]] where {objects} specify ingredient, pre and post mods
+
+    2. for 'preferred ingredients' and 'ingredients must be from' list, 'base alcohol families' should specify parent_ingredients list
+        - these ingredients are generic forms of all ingredients included in the family
+        <- single parent_ingrent could alternatively be family key
+        - ex 'base alcohol family': whiskey: {
+            
+            parent_ingredients: ['whiskey', 'whisky']
+        } OR 
+        'whiskey': {grouping_regex: 'whisk(e)?y'} <- parent ingredient is 'whiskey'
+
+    3. ingredient families should ONLY EXIST on frontend!
+        - should pass backend prepared list with alternatives pre-filled in
+        - 'must include', 'preferred ingredients' and 'ingredients must be from' lists should use nested alternatives format:
+            - [[{group_1_option_1, group_1_option2}], [{group_2_only_option}]]

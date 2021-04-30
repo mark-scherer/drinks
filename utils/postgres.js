@@ -7,6 +7,7 @@ const _         = require('lodash')
 let pools = {}
 
 const connect = function(config, name='default') {
+  if (pools[name]) return
   pools[name] = new Pool(config)
   pools[name].on('error', (err, client) => {
     console.error(`Postgres util: unexpected error on idle client ${name}: ${err}`)
