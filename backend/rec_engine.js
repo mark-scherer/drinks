@@ -1,6 +1,6 @@
 /*
-  Recommendation engine
-  All backend reccomendation generation
+  Recommendation Engine
+  Contains all backend reccomendation generation
 */
 
 const Bluebird = require('bluebird')
@@ -12,14 +12,13 @@ const config = utils.config(require('../configs/public.json'), require('../confi
 const POSTGRES_CONCURRENCY = 4
 
 // filtering controls
-const ONLY_ALCOHOLIC                  = true
 const MIN_PREFERRED_INGREDIENTS_COUNT = 1         // min count of preferred ingredient recommended drink must have (only_preferred_ingredients === false only)
 
 // scoring params
 const RATING_BENCHMARK                = 5         // below this avg rating, more ratings count negative
 const RATING_COUNT_FACTOR             = 0.005     // quantified weight on lots of ratings (see usage)
 const RATING_COUNT_CAP                = 200       // max rating count to use in scoring algorithm
-const UNPREFERRED_INGREDIENT_PENALTY  = 2         // score penalty for each non-preferred ingredient (only_preferred_ingredients === false only) (SHOULD BE POSITIVE!)
+const UNPREFERRED_INGREDIENT_PENALTY  = 2         // score penalty for each non-preferred ingredient (only_preferred_ingredients === false only) (SHOULD BE POSITIVE NUMBER!)
 const RANDOM_SHUFFLE                  = 1         // total range of random shuffle added to each score
 
 /*
