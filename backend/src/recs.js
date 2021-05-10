@@ -175,7 +175,7 @@ const frontend_input_expansion = async function(input_must_include_ingredients, 
 const main = async function() {
   const INPUT_NUMBER_OF_RECS = 3
   const INPUT_ONLY_PREFFERRED_INGREDIENTS = false
-  const INPUT_ALCOHOLIC_DRNIKS = false
+  const INPUT_ALCOHOLIC_DRNIKS = true
 
   // should be flat list of ingredients or families
   const INPUT_MUST_INCLUDE_INGREDIENTS = null

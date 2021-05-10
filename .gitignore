@@ -1,5 +1,5 @@
 # custom fields
-configs/private.json
+backend/configs/private.json
 
 # Logs
 logs

@@ -16,6 +16,7 @@
 /*
   To do
     1. scrape full site, iterate regexs
+    2. fix 'did not find ingredient in modified string' error in scraper_utils.parse_ingredient(...)
 */
 
 'use strict'
@@ -26,11 +27,9 @@ const cheerio = require('cheerio')
 const Bluebird = require('bluebird')
 const _ = require('lodash')
 
-const utils = require('../../utils/utils')
+const utils = require('../utils/utils')
 const scraper_utils = require('./scraper_utils')
-const { POINT_CONVERSION_COMPRESSED } = require('constants')
-const { indexOf } = require('lodash')
-const config = utils.config(require('../../configs/public.json'), require('../../configs/private.json'))
+const config = utils.config(require('../configs/public.json'), require('../configs/private.json'))
 
 const BASE_URL = 'https://www.webtender.com'
 const DRINK_LIST_URL = `${BASE_URL}/db/browse?level=2&dir=drinks&char=%2A`

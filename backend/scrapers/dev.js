@@ -1,6 +1,6 @@
 const fs = require('fs')
 
-const utils = require('../../utils/utils')
+const utils = require('../utils/utils')
 const scraper_utils = require('./scraper_utils')
 
 const main = async function() {

@@ -1,6 +1,6 @@
 const _ = require('lodash')
 
-const utils = require('../../utils/utils')
+const utils = require('../utils/utils')
 
 const ROUNDED_DECIMALS = 3
 
@@ -202,7 +202,7 @@ const parse_ingredient = function(raw_ingredient_str) {
     }
   })
   const actual_ingredient_index = raw_ingredient_str.indexOf(ingredient_str)
-  if (actual_ingredient_index < 0) throw Error(`did not find ingredient in modified string: ${JSON.stringify({ raw_ingredient_str, ingredient_str, actual_ingredient_index, found_mods })}`)
+  if (actual_ingredient_index < 0) throw Error(`did not find ingredient in modified string: ${JSON.stringify({ raw_ingredient_str, ingredient_str, actual_ingredient_index, uncategorized_mods })}`)
 
   let premods = [], postmods = []
   _.forEach(uncategorized_mods, mod_info => {
