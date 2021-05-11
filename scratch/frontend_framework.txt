@@ -1,0 +1,62 @@
+##### Frontend Framework Scratch #####
+
+- 05/10/2021
+- current progress
+    - frontend: not started
+    - backend:
+        - rec engine works but is rather simple
+        - server just has GET /drinks
+
+### pre-thoughts ###
+- want to try something other than react
+- could be: Angular, Vue
+
+- sources
+    1. https://www.codeinwp.com/blog/angular-vs-vue-vs-react/
+
+- popularity
+    - job demand
+        - angular & react tied, Vue in 3rd w/ 20% as much
+    - git interaction
+        - vue ahead, then react then angular much lower
+
+- performance
+    - size
+        - no unreasonable differences
+
+- Angular
+    - oldest, released in 2010 by Google
+        - Angular 2 released in 2016
+    - typescript based
+    - component = 'directive'
+        - UI part controlled by html
+        - behaviors controlled by JS code
+    - steep learning curve
+    - complete framework
+
+- Vue
+    - created by ex-Googler in 2014
+        - Vue 3.0 released in 2020
+    - easiest to learn
+    - 'higher customizability'
+    - styles and code inside .vue files
+    - vue creates 'data object' which can be freely updated in contrast to react's state object
+    - vue allows 'two-way-binding'
+        - user updating a data input will update tied var
+        - code updating var will also update data field
+    - child objects emit events heard by parents
+        - in react, children call parent functions passed down via this.props
+
+- React
+    - released by FB in 2013
+    - used extensively by FB
+    - medium learning curve
+    - not a complete framework
+
+### Decision ###
+<- vue
+    - simplest to learn and growing in popularity
+    - very open source
+    - seems to get rid of annoying parts of react
+        - state
+        - passing functions down to children

@@ -102,7 +102,7 @@ const main = async function() {
   } = await frontend_input_expansion(INPUT_MUST_INCLUDE_INGREDIENTS, INPUT_PREFERRED_INGREDIENTS)
   
   const result = await utils.request({
-    url: `http://localhost:8000/drinks`, 
+    url: `http://localhost:${config.PORT}/drinks`, 
     qs: {
       n: INPUT_NUMBER_OF_RECS, 
       must_include_ingredients, 
