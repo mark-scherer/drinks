@@ -14,5 +14,9 @@ router.get('/drinks', drinks_api.get)
 app
   .use(router.routes())
   .use(router.allowedMethods())
+  .use(async (ctx, next) => {     /* for dev only */
+    ctx.set('Access-Control-Allow-Origin', '*')
+    await next()
+  })
 
 app.listen(config.PORT)

@@ -1,0 +1,45 @@
+##### Querystring Encoding Scratch #####
+- 05/11/2021
+    - frontend: setup vue app, added basic drink rendering functionality w/ dummy test request on startup
+    - backend: just GET /drinks and basic rec algo
+
+### issue ###
+- GET /drinks querystring inputs (must_include_ingredients, preferred_ingredients) are implemented as nested lists
+- currently, frontend encoding and backend decoding do not match
+    - backend: 
+        - uses npm qs's parse
+        - expects: test[0][0]=a,test[0][1]=b,test[1][0]=c,test[1][1]=d ==> {test: [[a, b], [c, d]]}
+    - frontend:
+        - uses URL & URLSearchParams
+        - outputs: {test: [[a, b], [c, d]]} ==> test=a,b,c,d
+        <- not even nested
+
+### optiond ###
+1. use qs on frontend too
+    - is ugly but should work
+2. encode json into query
+    <- seems to be no standard way to encode json as querystring... some options:
+        - Rison
+        - O-Rison
+        - JSURL
+        - QS
+        - URLON
+        - QS-JSON
+        <- qs seems to be one of more popular...
+
+- how to import qs npm package on client?
+    1. try require('qs') just like backend
+        <- worked! client blocked response due to CORS policy: Access-Control-Allow-Origin
+
+- CORS policy
+    - Cross-Origin Resource Sharing
+    - server must indicate if browser should allow loading of resource from other sources (ports, domains, etc)
+    <- issue: during testing, frontend & backend run from different ports
+        <- can't run from same port...
+    <- must use response header Access-Control-Allow-Origin to tell client to accept from other places...
+        'Access-Control-Allow-Origin: *'
+    <- summary: 
+        - in dev run backend & serving frontend on different ports
+        - browser sussed out when requests come from different ports
+        - need to tell it to chill in first response:
+            - response header: 'Access-Control-Allow-Origin: *'            
