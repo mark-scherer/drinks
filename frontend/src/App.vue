@@ -1,10 +1,15 @@
 <template>
-  <DrinkList v-bind:drinks="drinks" ref="drink_list"/>
+  <div>
+    <IngredientSelector v-bind:ingredients="ingredients"/>
+    <DrinkList v-bind:drinks="drinks"/>
+  </div>
 </template>
 
 <script>
-import DrinkList from './components/DrinkList.vue'
 const qs = require('qs')
+
+import DrinkList from './components/DrinkList.vue'
+import IngredientSelector from './components/IngredientSelector.vue'
 
 const SERVER_URL = 'http://localhost:8000'
 
@@ -27,9 +32,6 @@ const getDrinks = async function() {
     ],
     alcoholic_drinks: true
   }
-  // issue encoding & decoding nested list in querystring
-    // probably want to assess how both encoding & decoding work & format in general
-  // url.search = new URLSearchParams(params).toString()
   url.search = qs.stringify(params, { encode: false })
 
   return fetch(url)
@@ -42,14 +44,28 @@ const getDrinks = async function() {
     .catch(err => console.error(`error in getDrinks request: ${err}`))
 }
 
+const getIngredients = async function() {
+  const url = new URL(`${SERVER_URL}/ingredients`)
+  return fetch(url)
+    .then(response => { 
+      if (response.status !== 200) {
+        console.error(`getIngredients got non-200 response: ${response.status}`)
+      }
+      return response.json()
+    })
+    .catch(err => console.error(`error in getIngredients request: ${err}`))
+}
+
 export default {
   name: 'App',
   components: {
-    DrinkList
+    DrinkList,
+    IngredientSelector
   },
   data() {
     return {
-      drinks: []
+      drinks: [],
+      ingredients: []
     }
   },
   methods: {
@@ -59,15 +75,21 @@ export default {
           this.drinks = drinks
         })
         .catch(err => console.error(`error running updateDrinks: ${err}`))
-    }
+    },
+    updateIngredients() {
+      getIngredients()
+        .then(ingredients => {
+          this.ingredients = ingredients
+          console.log(JSON.stringify({ ingredients: this.ingredients }))
+        })
+        .catch(err => console.error(`error running updateIngredients: ${err}`))
+    },
   },
   mounted() {
     this.updateDrinks()
+    this.updateIngredients()
   }
 }
-
-// send dummy request at startup
-// updateDrinks()
 
 </script>
 
