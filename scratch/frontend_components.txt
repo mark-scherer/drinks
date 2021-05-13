@@ -1,0 +1,10 @@
+##### Frontend Components Library Scratch #####
+
+1. Vuetify
+    - tried to use "vue add vuetify"
+        - had alot of difficulty with vue add changes but finally caught on and replicated in what I had implemented
+    - found for Vue 3, need to use Vuetify 3+ (alpha): https://github.com/vuetifyjs/vue-cli-plugins/issues/140#issuecomment-716126367
+    - found Vuetify 3+ doesn't yet support autocomplete 
+        - see "What is included in the Alpha?" https://next.vuetifyjs.com/en/getting-started/installation/#table-of-contents
+        - see list of supported components via API in sidebar
+        - need v-autocomplete, not supported yet
