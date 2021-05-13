@@ -12,19 +12,7 @@
     <table class="ingredient-table">
       <tbody>
         <tr v-for="ingredient_info in all_ingredients" v-bind:key="ingredient_info.full_str">
-          <template v-if="ingredient_info.premods_str.length > 0" class="mod">
-            <span class="mod">
-              {{ingredient_info.premods_str}}
-              <span> </span>
-            </span>
-          </template>
-          <span>{{ingredient_info.ingredient_str}}</span>
-          <template v-if="ingredient_info.postmods_str.length > 0">
-            <span class="mod">
-              <span> </span>
-              {{ingredient_info.postmods_str}}
-            </span>
-          </template>
+          <IngredientSummary v-bind:ingredient_info="ingredient_info"/>
         </tr>
       </tbody>
     </table>
@@ -34,6 +22,7 @@
 <script>
 import { desanitize } from '../utils'
 import DrinkSummary from './DrinkSummary.vue'
+import IngredientSummary from './IngredientSummary.vue'
 const _ = require('lodash')
 
 export default {
@@ -42,7 +31,8 @@ export default {
     drinks: Array
   },
   components: {
-    DrinkSummary
+    DrinkSummary,
+    IngredientSummary
   },
   data() {
     return {
@@ -77,7 +67,7 @@ export default {
 
 <style scoped>
   .drink-list {
-    max-width: 75%;
+    max-width: 95%;
     margin: 0px auto;
   }
   table {
