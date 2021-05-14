@@ -1,7 +1,7 @@
 <!-- Autocomplete: custom auto-complete selector -->
 
 <template>
-  <div class="autocomplete" :class="{'open': openChoices}">
+  <div class="autocomplete" >
     <!-- {{choices}} -->
     <input class="form-control" type="text" :value="modelValue" 
       @keydown.enter = 'enter'
@@ -9,11 +9,11 @@
       @keydown.up = 'up'
       @input = 'change'
     />
-    <ul class="dropdown-menu">
+    <ul class="dropdown-choices" :class="{open: openChoices}">
       <li v-for="(suggestion, index) in matches" :key="suggestion" :class="{ active: isActive(index)}"
         @click="suggestionClick(index)"
       >
-        <a href="#">{{ suggestion }}</a>
+        <span>{{ suggestion }}</span>
       </li>
     </ul>
   </div>
@@ -77,7 +77,7 @@ export default {
     suggestionClick(index) {
       this.$emit('update:modelValue', this.matches[index])
       this.open = false
-    }
+    },
   }
 }
 </script>
@@ -85,11 +85,18 @@ export default {
 <style scoped>
   .autocomplete {
     position: relative;
+    min-height: 200px;
   }
-  .dropdown-menu {
-    width: 100%
+  .dropdown-choices {
+    width: 100%;
+    padding-left: 0px;
+    list-style: none;
+  }
+  .dropdown-choices:not(.open) {
+    display: none;
   }
   .active {
     background: gray;
+    border-radius: 10px;
   }
 </style>

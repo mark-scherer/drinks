@@ -2,8 +2,8 @@
 
 <template>
   <div class="ingredient-selector">
-    <Autocomplete v-model="ingredient_selection" :choices="ingredients"/>
     {{ ingredient_selection }}
+    <Autocomplete v-model="ingredient_selection" :choices="ingredients"/>
   </div>
 </template>
 
@@ -38,5 +38,8 @@ export default {
 </script>
 
 <style scoped>
-
+.ingredient-selector {
+  width: 30%;
+  margin: 0 auto;
+}
 </style>
