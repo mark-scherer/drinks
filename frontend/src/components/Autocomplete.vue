@@ -1,17 +1,22 @@
 <!-- Autocomplete: custom auto-complete selector -->
 <!-- modelValue is value passed up to IngredientSelector.ingredient_selection, and is changed when IngredientSelector.ingredient_selection changes -->
+  <!-- 'modelValue' name forced by vue 3: https://v3.vuejs.org/guide/forms.html#basic-usage -->
 
 <template>
   <div class="autocomplete" >
-    <!-- {{choices}} -->
+    <ul class="selected-list">
+      <li v-for="selection in modelValue" :key="selection" class="selected-choice">
+        {{selection}}
+      </li>
+    </ul>
     <input class="form-control" type="text" v-model="currentTyping" 
       @keydown.enter = 'enter'
       @keydown.down = 'down'
       @keydown.up = 'up'
       @input = 'change'
     />
-    <ul class="dropdown-choices" :class="{open: openChoices}">
-      <li v-for="(suggestion, index) in matches" :key="suggestion" :class="{ active: isActive(index)}"
+    <ul class="dropdown-choice-list" :class="{open: openChoices}">
+      <li v-for="(suggestion, index) in matches" :key="suggestion" class="dropdown-choice" :class="{ 'active-choice': isActive(index)}"
         @click="suggestionClick(index)"
       >
         <a href='#'>{{ suggestion }}</a>
@@ -57,7 +62,7 @@ export default {
   },
   methods: {
     enter() {
-      this.$emit('update:modelValue', this.modelValue.concat([this.matches[this.currentIndex]]))
+      if (this.openChoices) this.$emit('update:modelValue', this.modelValue.concat([this.matches[this.currentIndex]]))
     },
     up() {
       if (this.currentIndex > 0) this.currentIndex--
@@ -86,15 +91,23 @@ export default {
     position: relative;
     min-height: 200px;
   }
-  .dropdown-choices {
+  ul {
     width: 100%;
     padding-left: 0px;
     list-style: none;
   }
-  .dropdown-choices:not(.open) {
+  .dropdown-choice-list:not(.open) {
     display: none;
   }
-  .active {
+  .selected-choice{
+    display: inline-block;
+    margin: 4px 10px;
+    background: lightgray;
+    padding: 5px;
+    border-radius: 5px;
+    white-space: nowrap;
+  }
+  .active-choice {
     background: gray;
     border-radius: 10px;
   }

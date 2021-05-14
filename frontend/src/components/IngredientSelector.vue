@@ -2,7 +2,7 @@
 
 <template>
   <div class="ingredient-selector">
-    {{ ingredient_selection }}
+    <!-- {{ ingredient_selection }} -->
     <Autocomplete v-model="ingredient_selection" :choices="ingredients"/>
   </div>
 </template>
