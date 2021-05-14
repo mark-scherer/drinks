@@ -1,5 +1,16 @@
 ##### Frontend Components Library Scratch #####
 
+- vue3 release date: Sept 2020
+
+### autocomplete ###
+- need must_include_ingredients & preferred_ingredients select element
+- requirements
+    - autocomplete from list
+    - display category with suggestions
+    - select multiple chips, clear one and clear all
+    - select 'parent option', 'child options' selected too (and shown to be selected or disappear from view)
+    - browse all categorized selections when not searching
+
 1. Vuetify
     - tried to use "vue add vuetify"
         - had alot of difficulty with vue add changes but finally caught on and replicated in what I had implemented
@@ -8,3 +19,44 @@
         - see "What is included in the Alpha?" https://next.vuetifyjs.com/en/getting-started/installation/#table-of-contents
         - see list of supported components via API in sidebar
         - need v-autocomplete, not supported yet
+
+2. npm vue3-autocomplete
+    - https://github.com/Takachi67/vue3-autocomplete
+    - very few downloads but might be a good starting spot for dev
+
+3. vue-tags-input
+    - http://www.vue-tags-input.com/#/
+    - unclear if works w/ vue 3
+    - seems well documented
+    - no repo to clone, only npm install
+    - could be good starting spot
+
+4. vue-autosuggest
+    - https://github.com/darrenjennings/vue-autosuggest
+    - demo: https://darrenjennings.github.io/vue-autosuggest/
+    - doesn't support multiple
+    - seems somewhat minimal
+    - complicated src
+
+5. v-autocomplete
+    - https://github.com/paliari/v-autocomplete
+    - demo: https://paliari.github.io/v-autocomplete/
+    - doesn't support multiple
+    - unclear if supports vue 3 <- is old, probably doesn't
+
+6. vue-simple-suggest
+    - https://github.com/KazanExpress/vue-simple-suggest
+    - demo: https://kazanexpress.github.io/vue-simple-suggest/
+    - doesn't support multiple
+    - does support formatting of results
+    - is repo
+
+7. make our own
+    - use this guide: https://medium.com/@fareez_ahamed/make-your-own-autocomplete-component-quickly-using-vue-js-21a642e8b140
+
+### choice ###
+- making our own
+    - none are that close
+        - multi-selection might be hard, might had to look at example
+    - hard to tell if any support vue 3...
+

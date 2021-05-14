@@ -1,6 +1,6 @@
 <template>
   <div>
-    <IngredientSelector v-bind:ingredients="ingredients"/>
+    <IngredientSelector v-bind:ingredients_info="ingredients"/>
     <DrinkList v-bind:drinks="drinks"/>
   </div>
 </template>
