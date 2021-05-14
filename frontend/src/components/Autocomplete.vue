@@ -32,8 +32,6 @@
 
 <script>
 const _ = require('lodash')
-// import x from 'vue-icon/lib/vue-feather.esm'
-
 
 export default {
   name: 'Autocomplete',
@@ -52,9 +50,6 @@ export default {
     }
   },
   emits: ['update:modelValue'],
-  components: {
-    // x
-  },
   data() {
     return {
       open: false,
