@@ -24,7 +24,7 @@ export default {
   data() {
     return {
       ingredients: [],
-      ingredient_selection: ''
+      ingredient_selection: []
     }
   },
   watch: {

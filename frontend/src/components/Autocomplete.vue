@@ -1,9 +1,10 @@
 <!-- Autocomplete: custom auto-complete selector -->
+<!-- modelValue is value passed up to IngredientSelector.ingredient_selection, and is changed when IngredientSelector.ingredient_selection changes -->
 
 <template>
   <div class="autocomplete" >
     <!-- {{choices}} -->
-    <input class="form-control" type="text" :value="modelValue" 
+    <input class="form-control" type="text" v-model="currentTyping" 
       @keydown.enter = 'enter'
       @keydown.down = 'down'
       @keydown.up = 'up'
@@ -13,7 +14,7 @@
       <li v-for="(suggestion, index) in matches" :key="suggestion" :class="{ active: isActive(index)}"
         @click="suggestionClick(index)"
       >
-        <span>{{ suggestion }}</span>
+        <a href='#'>{{ suggestion }}</a>
       </li>
     </ul>
   </div>
@@ -34,7 +35,7 @@ export default {
       default: 10
     },
     modelValue: {
-      type: String,
+      type: Array,
       required: true,
     }
   },
@@ -42,41 +43,39 @@ export default {
   data() {
     return {
       open: false,
-      current: 0,
+      currentIndex: 0,
+      currentTyping: ''
     }
   },
   computed: {
     matches() {
-      return _.filter(this.choices, choice =>  choice.includes(this.modelValue)).slice(0, this.maxMatches)
+      return _.filter(this.choices, choice => choice.includes(this.currentTyping) && !this.modelValue.includes(choice)).slice(0, this.maxMatches)
     },
     openChoices() {
-      return this.modelValue !== "" && this.matches.length > 0 && this.open === true
+      return this.currentTyping !== "" && this.matches.length > 0 && this.open === true
     }
   },
   methods: {
     enter() {
-      this.$emit('update:modelValue', this.matches[this.current])
-      this.open = false
+      this.$emit('update:modelValue', this.modelValue.concat([this.matches[this.currentIndex]]))
     },
     up() {
-      if (this.current > 0) this.current--
+      if (this.currentIndex > 0) this.currentIndex--
     },
     down() {
-      if (this.current < this.matches.length - 1) this.current++
+      if (this.currentIndex < this.matches.length - 1) this.currentIndex++
     },
     isActive(index) {
-      return index === this.current
+      return index === this.currentIndex
     },
     change() {
-      this.$emit('update:modelValue', event.target.value)
       if (this.open === false) {
         this.open = true
-        this.current = 0
+        this.currentIndex = 0
       }
     },
     suggestionClick(index) {
-      this.$emit('update:modelValue', this.matches[index])
-      this.open = false
+      this.$emit('update:modelValue', this.modelValue.concat([this.matches[index]]))
     },
   }
 }
@@ -98,5 +97,9 @@ export default {
   .active {
     background: gray;
     border-radius: 10px;
+  }
+  a {
+    text-decoration: none;
+    color: inherit;
   }
 </style>
