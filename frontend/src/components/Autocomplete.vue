@@ -15,7 +15,7 @@
       </div>
       <input id="input" class="form-control" type="text" v-model="currentTyping" 
         @keydown.enter = 'enter'
-        @keydown.delete = 'pop'
+        @keydown.delete = 'popModelValue'
         @keydown.down = 'down'
         @keydown.up = 'up'
         @input = 'change'
@@ -81,7 +81,9 @@ export default {
           })
         }
       })
-      return _.sortBy(matches, matches => -1*matches.matchScore).slice(0, this.maxMatches)
+      const result = _.sortBy(matches, matches => -1*matches.matchScore).slice(0, this.maxMatches)
+      this.clampCurrentIndex(result.length)
+      return result
     },
     showChoices() {
       return this.currentTyping !== "" && this.matches.length > 0 && this.open === true
@@ -92,9 +94,11 @@ export default {
   },
   methods: {
     enter() {
-      if (this.showChoices) this.$emit('update:modelValue', this.modelValue.concat([this.matches[this.currentIndex].match]))
+      if (this.showChoices) {
+        this.$emit('update:modelValue', this.modelValue.concat([this.matches[this.currentIndex].match]))
+      }
     },
-    pop() {
+    popModelValue() {
       const copy = _.cloneDeep(this.modelValue)
       copy.pop()
       if (this.currentTyping === '') this.$emit('update:modelValue', copy)
@@ -130,6 +134,9 @@ export default {
     },
     focusInput() {
       document.getElementById('input').focus()
+    },
+    clampCurrentIndex(matchesLength) {
+      this.currentIndex = _.clamp(this.currentIndex, matchesLength - 1)
     }
   }
 }
