@@ -39,7 +39,7 @@ export default {
 
 <style scoped>
 .ingredient-selector {
-  width: 30%;
+  max-width: 800px;
   margin: 0 auto;
 }
 </style>

@@ -4,27 +4,35 @@
 
 <template>
   <div class="autocomplete" >
-    <ul class="selected-list">
-      <li v-for="(selection, index) in modelValue" :key="selection" class="selected-choice">
+    <div class='input-wrapper'>
+      <div v-for="(selection, index) in modelValue" :key="selection" class="selected-choice">
         <div class="selected-choice-details">
           <span>{{selection}}</span>
-          <img class="icon" src="https://img.icons8.com/ios/50/000000/multiply.png"
+          <img class="icon selection-x" src="https://img.icons8.com/ios/50/000000/multiply.png"
             @click="clickChoiceX(index)"
           />
         </div>
-      </li>
-    </ul>
-    <input class="form-control" type="text" v-model="currentTyping" 
-      @keydown.enter = 'enter'
-      @keydown.down = 'down'
-      @keydown.up = 'up'
-      @input = 'change'
-    />
-    <ul class="dropdown-choice-list" :class="{open: openChoices}">
+      </div>
+      <input id="input" class="form-control" type="text" v-model="currentTyping" 
+        @keydown.enter = 'enter'
+        @keydown.delete = 'pop'
+        @keydown.down = 'down'
+        @keydown.up = 'up'
+        @input = 'change'
+      />
+      <img class="icon input-x" src="https://img.icons8.com/ios/50/000000/multiply.png" :class="{hide: !showClearInput}"
+        @click="clickInputX(index)"
+      />
+    </div>
+    <ul class="dropdown-choice-list" :class="{hide: !showChoices}">
       <li v-for="(suggestion, index) in matches" :key="suggestion" class="dropdown-choice" :class="{ 'active-choice': isActive(index)}"
         @click="clickSuggestion(index)"
       >
-        <a href='#'>{{ suggestion }}</a>
+        <a href='#'>
+          <span>{{ suggestion.match.substring(0, suggestion.typingStartIndex) }}</span>
+          <span class="highlighted-text">{{ suggestion.match.substring(suggestion.typingStartIndex, suggestion.typingEndIndex) }}</span>
+          <span>{{ suggestion.match.substring(suggestion.typingEndIndex, suggestion.match.length) }}</span>
+        </a>
       </li>
     </ul>
   </div>
@@ -59,15 +67,35 @@ export default {
   },
   computed: {
     matches() {
-      return _.filter(this.choices, choice => choice.includes(this.currentTyping) && !this.modelValue.includes(choice)).slice(0, this.maxMatches)
+      let matches = []
+      _.forEach(this.choices, choice => {
+        const typingStartIndex = choice.indexOf(this.currentTyping)
+        if (typingStartIndex > -1 && !this.modelValue.includes(choice)) {
+          matches.push({
+            match: choice,
+            typingStartIndex,
+            typingEndIndex: typingStartIndex + this.currentTyping.length
+          })
+        }
+      })
+      return matches.slice(0, this.maxMatches)
+      // return _.filter(this.choices, choice => choice.includes(this.currentTyping) && !this.modelValue.includes(choice)).slice(0, this.maxMatches)
     },
-    openChoices() {
+    showChoices() {
       return this.currentTyping !== "" && this.matches.length > 0 && this.open === true
+    },
+    showClearInput() {
+      return this.currentTyping !== "" || this.modelValue.length > 0
     }
   },
   methods: {
     enter() {
-      if (this.openChoices) this.$emit('update:modelValue', this.modelValue.concat([this.matches[this.currentIndex]]))
+      if (this.showChoices) this.$emit('update:modelValue', this.modelValue.concat([this.matches[this.currentIndex].match]))
+    },
+    pop() {
+      const copy = _.cloneDeep(this.modelValue)
+      copy.pop()
+      if (this.currentTyping === '') this.$emit('update:modelValue', copy)
     },
     up() {
       if (this.currentIndex > 0) this.currentIndex--
@@ -85,12 +113,21 @@ export default {
       }
     },
     clickSuggestion(index) {
-      this.$emit('update:modelValue', this.modelValue.concat([this.matches[index]]))
+      this.$emit('update:modelValue', this.modelValue.concat([this.matches[index].match]))
+      this.focusInput()
     },
     clickChoiceX(index) {
       const copy = _.cloneDeep(this.modelValue)
       copy.splice(index, 1)
       this.$emit('update:modelValue', copy)
+    },
+    clickInputX() {
+      this.$emit('update:modelValue', [])
+      this.currentTyping = ''
+      this.focusInput()
+    },
+    focusInput() {
+      document.getElementById('input').focus()
     }
   }
 }
@@ -106,15 +143,18 @@ export default {
     padding-left: 0px;
     list-style: none;
   }
-  .dropdown-choice-list:not(.open) {
+  .dropdown-choice-list {
+    max-width: 300px;
+    margin: 10px auto 0px auto;
+  }
+  .hide {
     display: none;
   }
   .selected-choice{
-    display: inline-block;
-    margin: 4px 10px;
-    background: lightgray;
-    padding: 5px 5px 5px 10px;
-    border-radius: 15px;
+    margin: 2px;
+    background: #d3d3d3;
+    padding: 0px 4px 0px 10px;
+    border-radius: 10px;
     white-space: nowrap;
   }
   .selected-choice-details {
@@ -122,15 +162,37 @@ export default {
     align-items: center;
   }
   .icon {
-    height: 2em;
+    height: 1.75em;
+  }
+  .selection-x {
     margin-left: 5px;
   }
+  .input-x {
+    float: right
+  }
+  .highlighted-text {
+    background: #faf9eb;
+  }
   .active-choice {
-    background: gray;
+    background: #f0f0f0;
     border-radius: 10px;
   }
   a {
     text-decoration: none;
     color: inherit;
+  }
+  .input-wrapper {
+    border: 1px solid gray;
+    border-radius: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    padding: 5px;
+    min-height: 2em;
+    align-items: center;
+  }
+  input {
+    border: none;
+    outline: none;
+    flex-grow: 1;
   }
 </style>
