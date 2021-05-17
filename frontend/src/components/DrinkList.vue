@@ -67,7 +67,6 @@ export default {
 
 <style scoped>
   .drink-list {
-    max-width: 95%;
     margin: 0px auto;
   }
   table {

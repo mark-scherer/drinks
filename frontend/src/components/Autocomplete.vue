@@ -1,5 +1,5 @@
 <!-- Autocomplete: custom auto-complete selector -->
-<!-- modelValue is value passed up to IngredientSelector.ingredient_selection, and is changed when IngredientSelector.ingredient_selection changes -->
+<!-- modelValue is two-way bound to caller's input to v-model -->
   <!-- 'modelValue' name forced by vue 3: https://v3.vuejs.org/guide/forms.html#basic-usage -->
 
 <template>
@@ -145,7 +145,6 @@ export default {
 <style scoped>
   .autocomplete {
     position: relative;
-    min-height: 200px;
   }
   ul {
     width: 100%;
