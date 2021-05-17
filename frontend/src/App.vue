@@ -1,15 +1,17 @@
 <template>
   <div>
-    <IngredientSelector v-bind:ingredients_info="ingredients"/>
+    <Autocomplete v-model="must_include_ingredients" :choices="ingredients"/>
     <DrinkList v-bind:drinks="drinks"/>
   </div>
 </template>
 
 <script>
 const qs = require('qs')
+const _ = require('lodash')
+import { desanitize } from './utils'
 
 import DrinkList from './components/DrinkList.vue'
-import IngredientSelector from './components/IngredientSelector.vue'
+import Autocomplete from './components/Autocomplete.vue'
 
 const SERVER_URL = 'http://localhost:8000'
 
@@ -52,6 +54,15 @@ const getIngredients = async function() {
         console.error(`getIngredients got non-200 response: ${response.status}`)
       }
       return response.json()
+        .then(parsed_response => {
+          return _.map(parsed_response, ingredient_info => {
+            return {
+              ...ingredient_info,
+              name: desanitize(ingredient_info.ingredient),
+              category: desanitize(ingredient_info.category)
+            }
+          })
+        })
     })
     .catch(err => console.error(`error in getIngredients request: ${err}`))
 }
@@ -60,12 +71,13 @@ export default {
   name: 'App',
   components: {
     DrinkList,
-    IngredientSelector
+    Autocomplete
   },
   data() {
     return {
       drinks: [],
-      ingredients: []
+      ingredients: [],
+      must_include_ingredients: []
     }
   },
   methods: {

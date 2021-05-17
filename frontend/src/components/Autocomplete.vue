@@ -29,9 +29,9 @@
         @click="clickSuggestion(index)"
       >
         <a href='#'>
-          <span>{{ suggestion.match.substring(0, suggestion.typingStartIndex) }}</span>
-          <span class="highlighted-text">{{ suggestion.match.substring(suggestion.typingStartIndex, suggestion.typingEndIndex) }}</span>
-          <span>{{ suggestion.match.substring(suggestion.typingEndIndex, suggestion.match.length) }}</span>
+          <span>{{ suggestion.name.substring(0, suggestion.typingStartIndex) }}</span>
+          <span class="highlighted-text">{{ suggestion.name.substring(suggestion.typingStartIndex, suggestion.typingEndIndex) }}</span>
+          <span>{{ suggestion.name.substring(suggestion.typingEndIndex, suggestion.name.length) }}</span>
         </a>
       </li>
     </ul>
@@ -69,12 +69,12 @@ export default {
     matches() {
       let matches = []
       _.forEach(this.choices, choice => {
-        const typingStartIndex = choice.indexOf(this.currentTyping)
-        if (typingStartIndex > -1 && !this.modelValue.includes(choice)) {
+        const typingStartIndex = choice.name.indexOf(this.currentTyping)
+        if (typingStartIndex > -1 && !this.modelValue.includes(choice.name)) {
           const typingEndIndex = typingStartIndex + this.currentTyping.length
-          const matchScore = (typingEndIndex - typingStartIndex) / choice.length
+          const matchScore = (typingEndIndex - typingStartIndex) / choice.name.length
           matches.push({
-            match: choice,
+            name: choice.name,
             typingStartIndex,
             typingEndIndex,
             matchScore 
@@ -95,7 +95,7 @@ export default {
   methods: {
     enter() {
       if (this.showChoices) {
-        this.$emit('update:modelValue', this.modelValue.concat([this.matches[this.currentIndex].match]))
+        this.$emit('update:modelValue', this.modelValue.concat([this.matches[this.currentIndex].name]))
       }
     },
     popModelValue() {
@@ -119,7 +119,7 @@ export default {
       }
     },
     clickSuggestion(index) {
-      this.$emit('update:modelValue', this.modelValue.concat([this.matches[index].match]))
+      this.$emit('update:modelValue', this.modelValue.concat([this.matches[index].name]))
       this.focusInput()
     },
     clickChoiceX(index) {
