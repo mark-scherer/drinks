@@ -71,15 +71,17 @@ export default {
       _.forEach(this.choices, choice => {
         const typingStartIndex = choice.indexOf(this.currentTyping)
         if (typingStartIndex > -1 && !this.modelValue.includes(choice)) {
+          const typingEndIndex = typingStartIndex + this.currentTyping.length
+          const matchScore = (typingEndIndex - typingStartIndex) / choice.length
           matches.push({
             match: choice,
             typingStartIndex,
-            typingEndIndex: typingStartIndex + this.currentTyping.length
+            typingEndIndex,
+            matchScore 
           })
         }
       })
-      return matches.slice(0, this.maxMatches)
-      // return _.filter(this.choices, choice => choice.includes(this.currentTyping) && !this.modelValue.includes(choice)).slice(0, this.maxMatches)
+      return _.sortBy(matches, matches => -1*matches.matchScore).slice(0, this.maxMatches)
     },
     showChoices() {
       return this.currentTyping !== "" && this.matches.length > 0 && this.open === true
