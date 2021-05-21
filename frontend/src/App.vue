@@ -19,7 +19,7 @@
           >Get drinks</button>
       </div>
     </div>
-    <DrinkList v-bind:drinks="drinks"/>
+    <DrinkList :drinks="drinks" :totalDrinksCount="total_drinks_count" :drinksLoaded="drinks_loaded"/>
   </div>
 </template>
 
@@ -65,19 +65,23 @@ export default {
   data() {
     return {
       drinks: [],
+      total_drinks_count: 0,
       ingredients: [],
       must_include_ingredients: [],
       preferred_ingredients: [],
-      only_preferred_ingredients: false
+      only_preferred_ingredients: false,
+      drinks_loaded: false
     }
   },
   methods: {
     updateDrinks() {
-      console.log(JSON.stringify({ must_include_ingredients: this.must_include_ingredients }))
+      // console.log(JSON.stringify({ must_include_ingredients: this.must_include_ingredients }))
       const url = new URL(`${SERVER_URL}/drinks`)
       const params = {
         n: 3,
         must_include_ingredients: _.map(this.must_include_ingredients, ingredient => [ ingredient ]),
+        preferred_ingredients: _.map(this.preferred_ingredients, ingredient => [ ingredient ]),
+        only_preferred_ingredients: this.only_preferred_ingredients,
         alcoholic_drinks: true
       }
       url.search = qs.stringify(params, { encode: false })
@@ -88,8 +92,10 @@ export default {
             console.error(`getDrinks got non-200 response: ${response.status}`)
           }
           response.json()
-            .then(parsed_drinks => {
-              this.drinks = parsed_drinks
+            .then(parsed_response => {
+              this.drinks = parsed_response.drinks
+              this.total_drinks_count = parsed_response.drink_count
+              this.drinks_loaded = true
             })
         })
         .catch(err => console.error(`error in getDrinks request: ${err}`))
@@ -151,5 +157,8 @@ export default {
   }
   button:hover {
     background: #cfcfcf;
+  }
+  .hide {
+    display: none;
   }
 </style>

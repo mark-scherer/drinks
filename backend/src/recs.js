@@ -42,20 +42,24 @@ const RANDOM_SHUFFLE                  = 1         // total range of random shuff
 const recommend_drinks = async function({n, must_include_ingredients, preferred_ingredients, only_preferred_ingredients, alcoholic_drinks, excluded_drinks}) {
   console.log(`recs.recommend_drinks: recieved request: ${JSON.stringify({ n, must_include_ingredients, preferred_ingredients, only_preferred_ingredients, alcoholic_drinks })}`)
 
-  let result = [], continue_loop = true
-  while (result.length < n && continue_loop) {
-    const rec = await _recommend_drink({
-      selected_drinks: _.map(result, 'drink'),
+  let drinks = [], drink_count, continue_loop = true
+  while (drinks.length < n && continue_loop) {
+    const rec_info = await _recommend_drink({
+      selected_drinks: _.map(drinks, 'drink'),
       must_include_ingredients,
       preferred_ingredients,
       only_preferred_ingredients,
       alcoholic_drinks,
       excluded_drinks
     })
-    if (rec) result.push(rec)
+    drink_count = rec_info.drink_count + drinks.length // _recommend_drink(...) excludes selected_drinks from count
+    if (rec_info.drink) drinks.push(rec_info.drink)
     else continue_loop = false
   }
-  return result
+  return {
+    drinks,
+    drink_count
+  }
 }
 
 /*
@@ -121,7 +125,10 @@ const _recommend_drink = async function({selected_drinks, must_include_ingredien
   })
   const sorted_drinks = _.sortBy(tmp, drink => -1 * drink.score)
 
-  return sorted_drinks.length > 0 ? sorted_drinks[0] : null
+  return {
+    drink: sorted_drinks.length > 0 ? sorted_drinks[0] : null,
+    drink_count: sorted_drinks.length
+  }
 }
 
 /*

@@ -155,9 +155,6 @@ export default {
     max-width: 300px;
     margin: 10px auto 0px auto;
   }
-  .hide {
-    display: none;
-  }
   .selected-choice{
     margin: 2px;
     background: #d3d3d3;

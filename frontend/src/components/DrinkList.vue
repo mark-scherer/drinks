@@ -9,6 +9,7 @@
         </tr>
       </tbody>
     </table>
+    <div class="drink-tail" :class="{hide: !drinksLoaded}">{{ otherDrinksMsg }}</div>
     <table class="ingredient-table">
       <tbody>
         <tr v-for="ingredient_info in all_ingredients" v-bind:key="ingredient_info.full_str">
@@ -28,7 +29,9 @@ const _ = require('lodash')
 export default {
   name: 'DrinkList',
   props: {
-    drinks: Array
+    drinks: Array,
+    totalDrinksCount: Number,
+    drinksLoaded: Boolean
   },
   components: {
     DrinkSummary,
@@ -37,6 +40,16 @@ export default {
   data() {
     return {
       all_ingredients: []
+    }
+  },
+  computed: {
+    otherDrinksMsg() {
+      const other_drinks = this.totalDrinksCount - this.drinks.length
+      return this.drinks.length > 0 ?
+        other_drinks > 0 ?
+          `found ${other_drinks} other drinks` :
+          `didn't find any other drinks` :  
+        `didn't find any drinks`
     }
   },
   watch: {
@@ -68,6 +81,10 @@ export default {
 <style scoped>
   .drink-list {
     margin: 0px auto;
+  }
+  .drink-tail {
+    margin-bottom: 20px;
+    font-size: larger;
   }
   table {
     display: inline-table;
