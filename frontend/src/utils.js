@@ -12,7 +12,14 @@ const desanitize = function(text, options={}) {
   return result
 }
 
+const sanitize = function(text) {
+  return text
+    .toLowerCase()
+    .replace(/ /g, '_')
+}
+
 export {
-  desanitize
+  desanitize,
+  sanitize
 }
 

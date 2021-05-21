@@ -35,7 +35,7 @@
 <script>
 const qs = require('qs')
 const _ = require('lodash')
-import { desanitize } from './utils'
+import { desanitize, sanitize } from './utils'
 
 import DrinkList from './components/DrinkList.vue'
 import Autocomplete from './components/Autocomplete.vue'
@@ -95,8 +95,8 @@ export default {
       const url = new URL(`${SERVER_URL}/drinks`)
       const params = {
         n: 3,
-        must_include_ingredients: _.map(this.must_include_ingredients, ingredient => [ ingredient ]),
-        preferred_ingredients: _.map(this.preferred_ingredients, ingredient => [ ingredient ]),
+        must_include_ingredients: _.map(this.must_include_ingredients, ingredient => [ sanitize(ingredient) ]),
+        preferred_ingredients: _.map(this.preferred_ingredients, ingredient => [ sanitize(ingredient) ]),
         only_preferred_ingredients: this.only_preferred_ingredients,
         alcoholic_drinks: true
       }
