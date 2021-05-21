@@ -116,6 +116,7 @@ export default {
     enter() {
       if (this.showChoices) {
         this.$emit('update:modelValue', this.modelValue.concat([this.matches[this.currentIndex].name]))
+        this.currentTyping = ''
       }
     },
     popModelValue() {
