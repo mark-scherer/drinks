@@ -13,7 +13,7 @@
           />
         </div>
       </div>
-      <input id="input" class="form-control" type="text" v-model="currentTyping" 
+      <input id="input" class="form-control" type="text" v-model="currentTyping" :placeholder="placeholder"
         @keydown.enter = 'enter'
         @keydown.delete = 'popModelValue'
         @keydown.down = 'down'
@@ -55,6 +55,10 @@ export default {
     modelValue: {
       type: Array,
       required: true,
+    },
+    placeholder: {
+      type: String,
+      default: 'default'
     }
   },
   emits: ['update:modelValue'],

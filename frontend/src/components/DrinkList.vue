@@ -10,13 +10,16 @@
       </tbody>
     </table>
     <div class="drink-tail" :class="{hide: !drinksLoaded}">{{ otherDrinksMsg }}</div>
-    <table class="ingredient-table">
-      <tbody>
-        <tr v-for="ingredient_info in all_ingredients" v-bind:key="ingredient_info.full_str">
-          <IngredientSummary v-bind:ingredient_info="ingredient_info"/>
-        </tr>
-      </tbody>
-    </table>
+    <div class="ingredient-list">
+      <h1 v-if="all_ingredients.length > 0">Ingredients</h1>
+      <table class="ingredient-table">
+        <tbody>
+          <tr v-for="ingredient_info in all_ingredients" v-bind:key="ingredient_info.full_str">
+            <IngredientSummary v-bind:ingredient_info="ingredient_info"/>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </template>
 
@@ -49,7 +52,7 @@ export default {
         other_drinks > 0 ?
           `found ${other_drinks} other drinks` :
           `didn't find any other drinks` :  
-        `didn't find any drinks`
+        `Didn't find any drinks. Try widening your search?`
     }
   },
   watch: {
@@ -85,6 +88,10 @@ export default {
   .drink-tail {
     margin-bottom: 20px;
     font-size: larger;
+  }
+  .ingredient-list h1 {
+    font-size: x-large;
+    margin-bottom: 10px;
   }
   table {
     display: inline-table;

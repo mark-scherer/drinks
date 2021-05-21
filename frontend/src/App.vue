@@ -1,13 +1,22 @@
 <template>
   <div>
+    <div class="title">
+      <h1>Let's find new drinks</h1>
+    </div>
     <div class="drinks-input">
       <div class="must-include-selector">
         <h1 class="select-label">Ingredients you want</h1>
-        <Autocomplete v-model="must_include_ingredients" :choices="ingredients"/>
+        <Autocomplete v-model="must_include_ingredients" 
+          :choices="ingredients" 
+          :placeholder="'Optional! Each drink will include all of these'"
+        />
       </div>
       <div class="preferred-ingredients-selector">
         <h1 class="select-label">Ingredients you have</h1>
-        <Autocomplete v-model="preferred_ingredients" :choices="ingredients"/>
+        <Autocomplete v-model="preferred_ingredients" 
+          :choices="ingredients"
+          :placeholder="preferredIngredientsPlaceholder"
+        />
         <div class="preferred-only-switch">
           <h2 class="switch-label">Use only these ingredients?</h2>
           <Switch v-model="only_preferred_ingredients"/>
@@ -71,6 +80,13 @@ export default {
       preferred_ingredients: [],
       only_preferred_ingredients: false,
       drinks_loaded: false
+    }
+  },
+  computed: {
+    preferredIngredientsPlaceholder() {
+      return this.only_preferred_ingredients ?
+        'Optional! All ingredients will come from this list' :
+        'Optional! We\'ll give preference to drinks with ingredients from this list'
     }
   },
   methods: {

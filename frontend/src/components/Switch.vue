@@ -8,6 +8,7 @@
       class="switch-wrapper"
       role="checkbox"
       :aria-checked="modelValue.toString()"
+      :value="modelValue"
       @click = 'toggle'
     >
       <span class="switch-background" :class="{'switch-background-active': modelValue}"/>
@@ -28,6 +29,7 @@ export default {
   emits: ['update:modelValue'],
   methods: {
     toggle() {
+      console.log(`toggling switch to: ${!this.modelValue}`)
       this.$emit('update:modelValue', !this.modelValue)
     }
   }
