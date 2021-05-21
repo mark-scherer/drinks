@@ -24,17 +24,31 @@
         @click="clickInputX(index)"
       />
     </div>
-    <ul class="dropdown-choice-list" :class="{hide: !showChoices}">
-      <li v-for="(suggestion, index) in matches" :key="suggestion" class="dropdown-choice" :class="{ 'active-choice': isActive(index)}"
-        @click="clickSuggestion(index)"
-      >
-        <a href='#'>
-          <span>{{ suggestion.name.substring(0, suggestion.typingStartIndex) }}</span>
-          <span class="highlighted-text">{{ suggestion.name.substring(suggestion.typingStartIndex, suggestion.typingEndIndex) }}</span>
-          <span>{{ suggestion.name.substring(suggestion.typingEndIndex, suggestion.name.length) }}</span>
-        </a>
-      </li>
-    </ul>
+    <div class="dropdown-choice-list">
+      <table :class="{hide: !showChoices}">
+        <tbody>
+          <tr v-for="(suggestion, index) in matches" :key="suggestion" class="dropdown-choice" :class="{ 'active-choice': isActive(index)}"
+            @click="clickSuggestion(index)"
+          >
+            <td class="suggestion-category">
+              {{ suggestion.category }}:
+            </td>
+            <td class="suggestion-name">
+              <a href='#'>
+                <b>
+                  <span>{{ suggestion.name.substring(0, suggestion.typingStartIndex) }}</span>
+                  <span class="highlighted-text">{{ suggestion.name.substring(suggestion.typingStartIndex, suggestion.typingEndIndex) }}</span>
+                  <span>{{ suggestion.name.substring(suggestion.typingEndIndex, suggestion.name.length) }}</span>
+                </b>
+              </a>
+            </td>
+            <td class="suggestion-description">
+              {{ suggestion.description }}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </template>
 
@@ -79,6 +93,8 @@ export default {
           const matchScore = (typingEndIndex - typingStartIndex) / choice.name.length
           matches.push({
             name: choice.name,
+            category: choice.category,
+            description: choice.description,
             typingStartIndex,
             typingEndIndex,
             matchScore 
@@ -156,8 +172,22 @@ export default {
     list-style: none;
   }
   .dropdown-choice-list {
-    max-width: 300px;
+    max-width: 1000px;
     margin: 10px auto 0px auto;
+    overflow: hidden;
+  }
+  .suggestion-category {
+    white-space: nowrap;
+    font-size: small;
+  }
+  .suggestion-name {
+    white-space: nowrap;
+    padding: 0 10px;
+  }
+  .suggestion-description {
+    white-space: nowrap;
+    text-align: start;
+    font-size: small;
   }
   .selected-choice{
     margin: 2px;
@@ -180,11 +210,13 @@ export default {
     float: right
   }
   .highlighted-text {
-    background: #faf9eb;
+    background: #fcf9c2;
   }
   .active-choice {
     background: #f0f0f0;
-    border-radius: 10px;
+    border-radius: 5px;
+    padding: 0 10px;
+    margin: 0 -10px;
   }
   a {
     text-decoration: none;
