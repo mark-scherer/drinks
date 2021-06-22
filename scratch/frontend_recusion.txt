@@ -17,3 +17,8 @@
         - matches is computed
         - matches is updating it's own input (choice.children)
         - matches recalls itself on its own update endlessly
+    <- confirmed! removing Autocomplete.matches()'s update of choice.children stopped both endless recursion warning
+
+- solutions
+    - copy input to a tmp var before updating
+        <- worked!
