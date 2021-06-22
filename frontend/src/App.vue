@@ -52,13 +52,26 @@ const getIngredients = async function() {
       }
       return response.json()
         .then(parsed_response => {
-          return _.map(parsed_response, ingredient_info => {
+          
+          // add desanitized ingredient fields
+          const individual_ingredients = _.map(parsed_response.ingredients, ingredient_info => {
             return {
               ...ingredient_info,
               name: desanitize(ingredient_info.ingredient),
               category: desanitize(ingredient_info.category)
             }
           })
+
+          // expand ingredient families & format as autocomplete choices
+          const families = _.map(parsed_response.families, (regex, parent) => {
+            return {
+              children: _.sortBy(_.filter(individual_ingredients, ingredient_info => RegExp(regex).test(ingredient_info.ingredient)), child => desanitize(child.name)),
+              name: desanitize(parent),
+              category: 'group'
+            }
+          })
+
+          return [ ...individual_ingredients, ...families ]
         })
     })
     .catch(err => console.error(`error in getIngredients request: ${err}`))
@@ -93,10 +106,15 @@ export default {
     updateDrinks() {
       // console.log(JSON.stringify({ must_include_ingredients: this.must_include_ingredients }))
       const url = new URL(`${SERVER_URL}/drinks`)
+      const must_include_ingredients = _.map(this.must_include_ingredients, ingredient => {
+        return ingredient.category === 'group' ?
+          _.map(ingredient.children, child => sanitize(child.name)) :
+          [ sanitize(ingredient.name) ]
+      })
       const params = {
         n: 3,
-        must_include_ingredients: _.map(this.must_include_ingredients, ingredient => [ sanitize(ingredient) ]),
-        preferred_ingredients: _.map(this.preferred_ingredients, ingredient => [ sanitize(ingredient) ]),
+        must_include_ingredients,
+        preferred_ingredients: _.map(this.preferred_ingredients, ingredient => [ sanitize(ingredient.name) ]),
         only_preferred_ingredients: this.only_preferred_ingredients,
         alcoholic_drinks: true
       }
@@ -175,6 +193,12 @@ export default {
     background: #cfcfcf;
   }
   .hide {
-    display: none;
+    display: none !important;
+  }
+
+  /* styling of specific drink categories */
+  .dropdown-choice.group .suggestion-category {
+    font-weight: bolder;
+    
   }
 </style>

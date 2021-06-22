@@ -6,6 +6,7 @@ const _ = require('lodash')
 
 const utils = require('../../utils/utils')
 const config = utils.config(require('../../configs/public.json'), require('../../configs/private.json'))
+const families = require('../../configs/ingredient_grouping.js')
 
 const REFRESH_PERIOD = 900 // s
 let LAST_REFRESH = 0
@@ -26,6 +27,9 @@ module.exports.get = async function(ctx, next) {
     LAST_REFRESH = current
   }
 
-  ctx.body = INGREDIENTS
+  ctx.body = {
+    ingredients: INGREDIENTS,
+    families
+  }
   await next()
 }
