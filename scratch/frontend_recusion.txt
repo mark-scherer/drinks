@@ -1,0 +1,19 @@
+### frontend unended recursion issue scratch ###
+
+- began after adding basic grouping functionality to frontend (a4b24bf4ddd5fa22fb1d3bd752de675482d23141)
+- on load, get two 'Maximum recursive updates exceeded' errors:
+    1. App.updateIngredients() > App.getIngredients().then()
+        - when setting this.ingredients = ingredients
+    2. Autocomplete.matches() > _.forEach() > if (choice.category === 'group')
+        - setting choice.childre = _.map(choice.children, ...)
+
+- complete error message
+    - 'Error: Maximum recursive updates exceeded'
+    - 'This means you have a reactive effect that is mutating its own dependencies and thus recursively triggering itself'
+    - 'Possible sources include component template, render function, updated hook or watcher source function'
+
+- theories
+    - case 2: Autocomplete.matches()
+        - matches is computed
+        - matches is updating it's own input (choice.children)
+        - matches recalls itself on its own update endlessly

@@ -122,7 +122,8 @@ export default {
       }
 
       let matches = []
-      _.forEach(this.choices, choice => {
+      const choices_copy = _.cloneDeep(this.choices) // allows modifying this.choices without triggering endless recusion
+      _.forEach(choices_copy, choice => {
         // TO DO: also search description, including default description for groups
           // ex: 'bourbon' should produce 'whiskey' family as a choice
         const typingStartIndex = choice.name.indexOf(this.currentTyping)
@@ -130,7 +131,7 @@ export default {
           if (selection.category === 'group') return [selection.name, ..._.map(selection.children, 'name')]
           else return selection.name
         }))
-        
+
         if (typingStartIndex > -1 && !allIncludedNames.includes(choice.name)) {
           const typingEndIndex = typingStartIndex + this.currentTyping.length
           const matchScore = rankMatch(choice, typingStartIndex, typingEndIndex)
