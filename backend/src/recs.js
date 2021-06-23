@@ -1,6 +1,8 @@
 /*
   Recommendation Engine
   Contains all backend reccomendation generation
+
+  ISSUE: only_preferred_ingredients === false acts like only_preferred_ingredients === true...
 */
 
 const Bluebird = require('bluebird')
@@ -70,56 +72,47 @@ const recommend_drinks = async function({n, must_include_ingredients, preferred_
   - returns: single drink recommendation
 */
 const _recommend_drink = async function({selected_drinks, must_include_ingredients, preferred_ingredients, only_preferred_ingredients, alcoholic_drinks, excluded_drinks}) {
-  await utils.pg.connect(config.pg_config)
-
-  // simplicfication for now
-  must_include_ingredients = _.flatten(must_include_ingredients)
-
-  const all_preferred_ingredients = _.flatten(preferred_ingredients)
+  const NOT_YET_IMPLEMENTED = {preferred_ingredients, only_preferred_ingredients, excluded_drinks}
+  if (_.some(Object.values(NOT_YET_IMPLEMENTED))) throw Error(`recs._recommend_drink: specified input not yet implemented: ${JSON.stringify(NOT_YET_IMPLEMENTED)}`)
+  if (!alcoholic_drinks) throw Error(`recs._recommend_drink: not yet implemented: ${JSON.stringify({ alcoholic_drinks })}`)
+  
+  // helper function for parsing drinks returned by query
   const parse_drink = (drink) => {
-    const ingredient_info = _.map(drink.raw_ingredient_info, ingredient_info => {
-      return {
-        ..._.pick(ingredient_info, ['ingredient', 'premods', 'postmods', 'quantity', 'units']),
-        preferred: preferred_ingredients ? 
-          all_preferred_ingredients.includes(ingredient_info.ingredient) :
-          null
-      }
-    })
     return {
-      ..._.omit(drink, ['source', 'raw_ingredient_info']),
+      ..._.omit(drink, ['source']),
       source_avg_rating   : parseFloat(drink.source_avg_rating),
-      ingredient_info,
     }
   }
 
-  const drinks_query = `
-    select 
-      drinks.*,
-      array_agg(row_to_json(drink_ingredients.*)) as raw_ingredient_info
-    from drinks join drink_ingredients 
-      on drinks.drink = drink_ingredients.drink
-    where drinks.drink != ALL(:drinks_to_exclude)
-    group by drinks.drink
-    ${ must_include_ingredients ? 'having array_agg(drink_ingredients.ingredient) @> :must_include_ingredients' : '' }
-  `
+  await utils.pg.connect(config.pg_config)
 
-  // query drinks to respect must_include_ingredients
   const drinks_to_exclude = (selected_drinks || []).concat(excluded_drinks || [])
-  console.log(JSON.stringify({ selected_drinks, drinks_to_exclude }))
-  const query_drinks = _.map(await utils.pg.query(drinks_query, { must_include_ingredients, drinks_to_exclude }), parse_drink)
 
-  // filter drinks to respect preferred_ingredients
-  const eligible_drinks = _.filter(query_drinks, drink => {
-    if (!preferred_ingredients) return true
-
-    const preferred_count = _.filter(drink.ingredient_info, 'preferred').length
-    if (only_preferred_ingredients) return preferred_count === drink.ingredient_info.length
-    else return preferred_count >= MIN_PREFERRED_INGREDIENTS_COUNT
-  })
+  const must_include_clause = must_include_ingredients && must_include_ingredients.length > 0 ?
+    _.map(must_include_ingredients, group => {
+      return `ingredient_names && array[${_.map(group, ingredient => `'${ingredient}'`).join()}]`
+    }).join(' and ') : ''
+  const drinks_query = `
+    with all_drinks as (
+      select 
+        drinks.*,
+        array_agg(row_to_json(drink_ingredients.*)) as ingredient_info,
+        array_agg(drink_ingredients.ingredient) as ingredient_names
+      from drinks join drink_ingredients
+        on drinks.drink = drink_ingredients.drink
+      where drinks.drink != ALL(:drinks_to_exclude)    
+      group by drinks.drink
+    ) 
+    select * 
+    from all_drinks
+    ${must_include_clause ? `where ${must_include_clause}` : ''}
+  `
+  // console.log(drinks_query)
+  const eligible_drinks = _.map(await utils.pg.query(drinks_query, {drinks_to_exclude}), parse_drink)
   console.log(`found ${eligible_drinks.length} eligible drinks...`)
 
   // const sorted_drinks = _.sortBy(eligible_drinks, drink => -1 * score_drink(drink, preferred_ingredients, only_preferred_ingredients)) 
-  // for debugging, see score in output
+  // for debugging, see score in output:
   const tmp = _.map(eligible_drinks, drink => {
     return {...drink, score: score_drink(drink, preferred_ingredients, only_preferred_ingredients)}
   })
