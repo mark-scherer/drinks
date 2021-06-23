@@ -266,7 +266,7 @@ export default {
     background: #d3d3d3;
     border-radius: 10px;
     white-space: nowrap;
-    max-width: 50%;
+    max-width: 49%;
   }
   .selected-choice-details {
     display: flex;
