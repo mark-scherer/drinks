@@ -9,19 +9,11 @@ const Bluebird = require('bluebird')
 const _ = require('lodash')
 
 const utils = require('../utils/utils')
+const import_scoring_config = require('./import_scoring_config')
 const config = utils.config(require('../configs/public.json'), require('../configs/private.json'))
+const scoring_config = import_scoring_config('../configs/scoring_config_dev.json')
 
 const POSTGRES_CONCURRENCY = 4
-
-// filtering controls
-const MIN_PREFERRED_INGREDIENTS_COUNT = 1         // min count of preferred ingredient recommended drink must have (only_preferred_ingredients === false only)
-
-// scoring params
-const RATING_BENCHMARK                = 5         // below this avg rating, more ratings count negative
-const RATING_COUNT_FACTOR             = 0.005     // quantified weight on lots of ratings (see usage)
-const RATING_COUNT_CAP                = 200       // max rating count to use in scoring algorithm
-const UNPREFERRED_INGREDIENT_PENALTY  = 2         // score penalty for each non-preferred ingredient (only_preferred_ingredients === false only) (SHOULD BE POSITIVE NUMBER!)
-const RANDOM_SHUFFLE                  = 1         // total range of random shuffle added to each score
 
 /*
   main recommendation generation function
@@ -140,17 +132,17 @@ const _recommend_drink = async function({selected_drinks, must_include_ingredien
 const score_drink = function(drink, preferred_ingredients, only_preferred_ingredients) {
   // start with source ratings, weighted by number of ratings
   let score = drink.source_rating_count && drink.source_avg_rating ?
-    (1 + Math.min(drink.source_rating_count, RATING_COUNT_CAP) * RATING_COUNT_FACTOR) * (drink.source_avg_rating - RATING_BENCHMARK) :
+    (1 + Math.min(drink.source_rating_count, scoring_config.RATING_COUNT_CAP) * scoring_config.RATING_COUNT_FACTOR) * (drink.source_avg_rating - scoring_config.RATING_BENCHMARK) :
     0
 
   // account for preferred ingredients, only if only_preferred_ingredients = false (otherwise already filtered to only preferred ingredients)
   if (!only_preferred_ingredients && preferred_ingredients) {
     const unpreferred_ingredients = _.filter(drink.ingredient_info, ingredient_info => !ingredient_info.preferred)
-    score -= unpreferred_ingredients.length * UNPREFERRED_INGREDIENT_PENALTY
+    score -= unpreferred_ingredients.length * scoring_config.UNPREFERRED_INGREDIENT_PENALTY
   }
 
   // add random shuffle
-  score += _.random(-1*RANDOM_SHUFFLE, RANDOM_SHUFFLE, true)
+  score += _.random(-1*scoring_config.RANDOM_SHUFFLE, scoring_config.RANDOM_SHUFFLE, true)
 
   return score
 }
