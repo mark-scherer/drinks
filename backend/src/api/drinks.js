@@ -12,7 +12,7 @@ module.exports.get = async function(ctx, next) {
   ctx.query.n = parseInt(ctx.query.n)
   ctx.query.must_include_ingredients = qs.parse(ctx.query).must_include_ingredients
   ctx.query.preferred_ingredients = qs.parse(ctx.query).preferred_ingredients
-  ctx.query.only_preferred_ingredients = Boolean(ctx.query.only_preferred_ingredients)
+  ctx.query.only_preferred_ingredients = String(ctx.query.only_preferred_ingredients).toLowerCase() === 'true'
   ctx.query.alcoholic_drinks = Boolean(ctx.query.alcoholic_drinks)
 
   const recs = await rec_engine.recommend_drinks(ctx.query)

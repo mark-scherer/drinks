@@ -111,11 +111,16 @@ export default {
           _.map(ingredient.children, child => sanitize(child.name)) :
           [ sanitize(ingredient.name) ]
       })
+      const preferred_ingredients = _.map(this.preferred_ingredients, ingredient => {
+        return ingredient.category === 'group' ?
+          _.map(ingredient.children, child => sanitize(child.name)) :
+          [ sanitize(ingredient.name) ]
+      })
       const params = {
         n: 3,
         must_include_ingredients,
-        preferred_ingredients: _.map(this.preferred_ingredients, ingredient => [ sanitize(ingredient.name) ]),
-        // only_preferred_ingredients: this.only_preferred_ingredients,
+        preferred_ingredients,
+        only_preferred_ingredients: this.only_preferred_ingredients,
         alcoholic_drinks: true
       }
       url.search = qs.stringify(params, { encode: false })

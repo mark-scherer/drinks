@@ -72,9 +72,10 @@ const recommend_drinks = async function({n, must_include_ingredients, preferred_
   - returns: single drink recommendation
 */
 const _recommend_drink = async function({selected_drinks, must_include_ingredients, preferred_ingredients, only_preferred_ingredients, alcoholic_drinks, excluded_drinks}) {
-  const NOT_YET_IMPLEMENTED = {preferred_ingredients, only_preferred_ingredients, excluded_drinks}
+  const NOT_YET_IMPLEMENTED = {excluded_drinks}
   if (_.some(Object.values(NOT_YET_IMPLEMENTED))) throw Error(`recs._recommend_drink: specified input not yet implemented: ${JSON.stringify(NOT_YET_IMPLEMENTED)}`)
   if (!alcoholic_drinks) throw Error(`recs._recommend_drink: not yet implemented: ${JSON.stringify({ alcoholic_drinks })}`)
+  if (preferred_ingredients && !only_preferred_ingredients) throw Error(`recs._recommend_drink: not yet implemented: ${JSON.stringify({ preferred_ingredients, only_preferred_ingredients })}`)
   
   // helper function for parsing drinks returned by query
   const parse_drink = (drink) => {
@@ -92,7 +93,12 @@ const _recommend_drink = async function({selected_drinks, must_include_ingredien
     _.map(must_include_ingredients, group => {
       return `ingredient_names && array[${_.map(group, ingredient => `'${ingredient}'`).join()}]`
     }).join(' and ') : ''
-  const drinks_query = `
+
+  // only used if only_preferred_ingredients === true, otherwised preferred_ingredients must be handled post-query
+  const preferred_ingredients_clause = only_preferred_ingredients && preferred_ingredients && preferred_ingredients.length > 0 ?
+    `ingredient_names <@ array[${_.map(_.flatten(preferred_ingredients), ingredient => `'${ingredient}'`).join()}]` : ''
+  
+    const drinks_query = `
     with all_drinks as (
       select 
         drinks.*,
@@ -105,9 +111,11 @@ const _recommend_drink = async function({selected_drinks, must_include_ingredien
     ) 
     select * 
     from all_drinks
-    ${must_include_clause ? `where ${must_include_clause}` : ''}
+    ${must_include_clause || preferred_ingredients_clause ? `where ` : ''}
+    ${must_include_clause}
+    ${(must_include_clause && preferred_ingredients_clause ? `and ` : '') + preferred_ingredients_clause}
   `
-  // console.log(drinks_query)
+  console.log(drinks_query)
   const eligible_drinks = _.map(await utils.pg.query(drinks_query, {drinks_to_exclude}), parse_drink)
   console.log(`found ${eligible_drinks.length} eligible drinks...`)
 
