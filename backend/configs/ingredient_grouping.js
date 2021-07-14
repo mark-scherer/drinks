@@ -20,6 +20,6 @@ module.exports = {
   "rum": "(rum$)|(bacardi)",
   "tequila": "(tequila$)|(jose_cuervo)",
   "brandy": "(brandy)|(cognac)|(sherry)",
-  "beer": "(beer)|(^ale$)|(corona)|(guinness)|(^lager$)|(stout)",
+  "beer": "(^beer$)|(^ale$)|(corona)|(guinness)|(^lager$)|(stout)",
   "wine": "(wine)|(champagne)|(dubonnet)|(port)|(thunderbird)"
 }
