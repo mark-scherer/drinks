@@ -18,7 +18,11 @@ const scoring_guide = {
     required      : true
   },
   
-  /* preferred_ingredients implementation controls */
+  /* preferred_ingredients implementation controls (only_preferred_ingredients === false) */
+  MIN_PERFERRED_INGREDIENT_FRACTION: {
+    description   : 'minimum fraction of ingredients that must be in preferred_ingredients list, when it\'s specified (only_preferred_ingredients === false only)',
+    required      : true
+  },
   NONPREFERRED_INGREDIENT_PENALTY: {
     description   : 'score penalty for each non-preferred ingredient (only_preferred_ingredients === false only) (SHOULD BE POSITIVE NUMBER!)',
     required      : true

@@ -57,6 +57,49 @@ const recommend_drinks = async function({n, must_include_ingredients, preferred_
 }
 
 /*
+  ranks eligible_drinks according to rec algo
+  includes preferential treatment to preferred_ingredients if only_preferred_ingredients = true
+    (aotherwise has been accounted for already in recommend_drinks)
+*/
+const score_drink = function(drink, preferred_ingredients, only_preferred_ingredients) {
+  // start with source ratings, weighted by number of ratings
+  let score = drink.source_rating_count && drink.source_avg_rating ?
+    (1 + Math.min(drink.source_rating_count, scoring_config.RATING_COUNT_CAP) * scoring_config.RATING_COUNT_FACTOR) * (drink.source_avg_rating - scoring_config.RATING_BENCHMARK) :
+    0
+
+  // preferred_ingredients && only_preferred_ingredients account for preferred ingredients
+  if (!only_preferred_ingredients && preferred_ingredients) {
+    score -= drink.nonpreferred_ingredient_info.length * scoring_config.UNPREFERRED_INGREDIENT_PENALTY
+  }
+
+  // add random shuffle
+  score += _.random(-1*scoring_config.RANDOM_SHUFFLE, scoring_config.RANDOM_SHUFFLE, true)
+
+  return score
+}
+
+// helper function for parsing drinks returned by query
+const parse_drink = (drink, preferred_ingredients, only_preferred_ingredients) => {
+  const ingredient_info = _.map(drink.ingredient_info, info => {
+    return {
+      ...info,
+      preferred   : !preferred_ingredients || preferred_ingredients.length === 0 || preferred_ingredients.includes(info.ingredient)
+    }
+  })
+  const unscored_drink = {
+    ..._.omit(drink, ['source']),
+    ingredient_info,
+    preferred_ingredient_info     : _.filter(ingredient_info, ingredient_info => ingredient_info.preferred),
+    nonpreferred_ingredient_info  : _.filter(ingredient_info, ingredient_info => !ingredient_info.preferred),
+    source_avg_rating             : parseFloat(drink.source_avg_rating)
+  }
+  return {
+    ...unscored_drink,
+    score                         : score_drink(unscored_drink, preferred_ingredients, only_preferred_ingredients)
+  }
+}
+
+/*
   recommend single drink
   - inputs:
     - selected_drinks     : list of drinks selected by previous cycles
@@ -67,19 +110,11 @@ const _recommend_drink = async function({selected_drinks, must_include_ingredien
   const NOT_YET_IMPLEMENTED = {excluded_drinks}
   if (_.some(Object.values(NOT_YET_IMPLEMENTED))) throw Error(`recs._recommend_drink: specified input not yet implemented: ${JSON.stringify(NOT_YET_IMPLEMENTED)}`)
   if (!alcoholic_drinks) throw Error(`recs._recommend_drink: not yet implemented: ${JSON.stringify({ alcoholic_drinks })}`)
-  if (preferred_ingredients && !only_preferred_ingredients) throw Error(`recs._recommend_drink: not yet implemented: ${JSON.stringify({ preferred_ingredients, only_preferred_ingredients })}`)
-  
-  // helper function for parsing drinks returned by query
-  const parse_drink = (drink) => {
-    return {
-      ..._.omit(drink, ['source']),
-      source_avg_rating   : parseFloat(drink.source_avg_rating),
-    }
-  }
 
   await utils.pg.connect(config.pg_config)
 
   const drinks_to_exclude = (selected_drinks || []).concat(excluded_drinks || [])
+  const _preferred_ingredients = _.flatten(preferred_ingredients)
 
   const must_include_clause = must_include_ingredients && must_include_ingredients.length > 0 ?
     _.map(must_include_ingredients, group => {
@@ -87,8 +122,8 @@ const _recommend_drink = async function({selected_drinks, must_include_ingredien
     }).join(' and ') : ''
 
   // only used if only_preferred_ingredients === true, otherwised preferred_ingredients must be handled post-query
-  const preferred_ingredients_clause = only_preferred_ingredients && preferred_ingredients && preferred_ingredients.length > 0 ?
-    `ingredient_names <@ array[${_.map(_.flatten(preferred_ingredients), ingredient => `'${ingredient}'`).join()}]` : ''
+  const preferred_ingredients_clause = only_preferred_ingredients && _preferred_ingredients && preferred_ingredients.length > 0 ?
+    `ingredient_names <@ array[${_.map(_preferred_ingredients, ingredient => `'${ingredient}'`).join()}]` : ''
   
     const drinks_query = `
     with all_drinks as (
@@ -107,44 +142,28 @@ const _recommend_drink = async function({selected_drinks, must_include_ingredien
     ${must_include_clause}
     ${(must_include_clause && preferred_ingredients_clause ? `and ` : '') + preferred_ingredients_clause}
   `
-  console.log(drinks_query)
-  const eligible_drinks = _.map(await utils.pg.query(drinks_query, {drinks_to_exclude}), parse_drink)
-  console.log(`found ${eligible_drinks.length} eligible drinks...`)
+  // console.log(drinks_query)
+  const eligible_drinks = _.map(await utils.pg.query(drinks_query, {drinks_to_exclude}), drink => parse_drink(drink, _preferred_ingredients, only_preferred_ingredients))
+  
+  // perform various filtering
+  const filtered_drinks = _.filter(eligible_drinks, drink => {
+    // if preferred_ingredients && only_preferred_ingredients, filter out dissimilar drinks
+    if (!only_preferred_ingredients && _preferred_ingredients && _preferred_ingredients.length > 0) {
+      const preferred_fraction = drink.preferred_ingredient_info.length / drink.ingredient_info.length
+      if (preferred_fraction < scoring_config.MIN_PERFERRED_INGREDIENT_FRACTION) return false
+    }
 
-  // const sorted_drinks = _.sortBy(eligible_drinks, drink => -1 * score_drink(drink, preferred_ingredients, only_preferred_ingredients)) 
-  // for debugging, see score in output:
-  const tmp = _.map(eligible_drinks, drink => {
-    return {...drink, score: score_drink(drink, preferred_ingredients, only_preferred_ingredients)}
+    return true
   })
-  const sorted_drinks = _.sortBy(tmp, drink => -1 * drink.score)
+  
+  console.log(`found ${eligible_drinks.length} eligible drinks, filtered to ${filtered_drinks.length}...`)
+
+  const sorted_drinks = _.sortBy(filtered_drinks, drink => -1 * drink.score)
 
   return {
     drink: sorted_drinks.length > 0 ? sorted_drinks[0] : null,
     drink_count: sorted_drinks.length
   }
-}
-
-/*
-  ranks eligible_drinks according to rec algo
-  includes preferential treatment to preferred_ingredients if only_preferred_ingredients = true
-    (aotherwise has been accounted for already in recommend_drinks)
-*/
-const score_drink = function(drink, preferred_ingredients, only_preferred_ingredients) {
-  // start with source ratings, weighted by number of ratings
-  let score = drink.source_rating_count && drink.source_avg_rating ?
-    (1 + Math.min(drink.source_rating_count, scoring_config.RATING_COUNT_CAP) * scoring_config.RATING_COUNT_FACTOR) * (drink.source_avg_rating - scoring_config.RATING_BENCHMARK) :
-    0
-
-  // account for preferred ingredients, only if only_preferred_ingredients = false (otherwise already filtered to only preferred ingredients)
-  if (!only_preferred_ingredients && preferred_ingredients) {
-    const unpreferred_ingredients = _.filter(drink.ingredient_info, ingredient_info => !ingredient_info.preferred)
-    score -= unpreferred_ingredients.length * scoring_config.UNPREFERRED_INGREDIENT_PENALTY
-  }
-
-  // add random shuffle
-  score += _.random(-1*scoring_config.RANDOM_SHUFFLE, scoring_config.RANDOM_SHUFFLE, true)
-
-  return score
 }
 
 module.exports = {
