@@ -1,42 +1,102 @@
-<!-- DrinkSummary: basic overview of single drink -->
+<!-- DrinkInfo: basic overview of single drink -->
+  <!-- modelValue is two-way bound to caller's input to v-model -->
+  <!-- modelValue used to control if full drink details are expanded or collapsed -->
 
-<template class="drink-summary">
-  <div class="drink-summary">
+<template>
+  <div class="drink-info">
       <h1>{{desanitize(drink_info.drink, {capitalize: true})}}</h1>
-      <div class="drink-info">
-        <div class = "ingredients">
-          <p v-for="(ingredient_info, index) in drink_info.ingredient_info" v-bind:key="ingredient_info.ingredient">
-            <template v-if="index > 0">, </template> <!-- jank way to add separator w/ v-for -->
-            <span v-for="mod in ingredient_info.premods" v-bind:key="mod" class="mod">
-              {{desanitize(mod)}}
-              <span> </span>
-            </span>
-            <span>{{desanitize(ingredient_info.ingredient)}}</span>
-            <span v-for="mod in ingredient_info.postmods" v-bind:key="mod" class="mod">
-              {{desanitize(mod)}}
-              <span> </span>
-            </span>
-          </p>
+
+      <!-- drink-summary when drink collapsed -->
+      <div class="drink-summary" :class="{hide: modelValue}">
+        <div class = "ingredients-summary">
+          <p
+            v-html="ingredients_summary(sortIngredients(drink_info.ingredient_info))"
+          ></p>
         </div>
-        <div class="drink-metadata">
+        <div class="drink-metadata-summary">
           <div v-if="drink_info.category"><span><b>Category:</b> {{desanitize(drink_info.category)}}</span></div>
           <div v-if="drink_info.glass"><span><b>Glass:</b> {{desanitize(drink_info.glass)}}</span></div>
         </div>
       </div>
+
+      <!-- drink-detail when drink expanded --> 
+      <div class="drink-details" :class="{hide: !modelValue}">
+        <div class="drink-metadata-details">
+          <div v-if="drink_info.category"><span><b>Category:</b> {{desanitize(drink_info.category)}}</span></div>
+          <div v-if="drink_info.glass"><span><b>Glass:</b> {{desanitize(drink_info.glass)}}</span></div>
+        </div>
+
+        <div class="drink-comments">
+          {{drink_info.comments}}
+        </div>
+
+        <div class="drink-instructions">
+          {{drink_info.instructions}}
+        </div>
+
+        <div class="ingredient-details">
+          <ul>
+            <li v-for="ingredient_info in sortIngredients(drink_info.ingredient_info)" :key="ingredient_info.ingredient" class="ingredient-instructions" 
+              v-html="ingredient_detail(ingredient_info)"
+            ></li>
+          </ul>
+        </div>
+
+      </div>
+      
+      <img :src="modelValue ? 'https://img.icons8.com/ios-glyphs/50/000000/collapse-arrow.png' : 'https://img.icons8.com/ios-glyphs/50/000000/expand-arrow.png'"
+        class="icon group-icon"
+        @click="toggle"
+      />
   </div>
 </template>
 
 <script>
+const _ = require('lodash')
 import * as utils from '../utils.js'
 
 export default {
-  name: 'DrinkSummary',
+  name: 'DrinkInfo',
   props: {
-    drink_info: Object
+    drink_info: Object,
+
+    // modelValue is two-way version of 'expanded' bool
+    modelValue: {
+      type: Boolean,
+      required: true,
+    }
   },
+  emits: ['update:modelValue'],
   methods: {
-    desanitize: utils.desanitize
-  }
+    desanitize: utils.desanitize,
+    toggle() {
+      console.log(`toggling DrinkInfo (${this.drink_info.drink}) to: ${!this.modelValue}`)
+      this.$emit('update:modelValue', !this.modelValue)
+    },
+    sortIngredients(ingredient_info) {
+      return _.sortBy(ingredient_info, info => {
+        if (info.quantity === 'fill') return 1
+        return 0
+      })
+    },
+    ingredients_summary(ingredient_info) {
+      return _.map(ingredient_info, info => {
+        const premods_html = _.map(info.premods, mod => `<span class="mod">${this.desanitize(mod)}</span>`).join('<span> </span>')
+        const postmods_html = _.map(info.postmods, mod => `<span class="mod">${this.desanitize(mod)}</span>`).join('<span> </span>')
+        return `${premods_html} ${this.desanitize(info.ingredient)}${postmods_html ? ` ${postmods_html}`: ''}`
+      }).join(', ')
+    },
+    ingredient_detail(ingredient_info) {
+      let quantity_str
+      if (ingredient_info.quantity === 'fill') quantity_str = 'fill with'
+      else quantity_str = `${ingredient_info.quantity} ${ingredient_info.units || ''}`
+
+      const premods_html = _.map(ingredient_info.premods, mod => `<span class="mod">${this.desanitize(mod)}</span>`).join('<span> </span>')
+      const postmods_html = _.map(ingredient_info.postmods, mod => `<span class="mod">${this.desanitize(mod)}</span>`).join('<span> </span>')
+
+      return `${quantity_str} ${premods_html} ${this.desanitize(ingredient_info.ingredient)} ${postmods_html}`
+    }
+  },
 }
 </script>
 
@@ -51,21 +111,41 @@ export default {
   span {
     font-size: medium;
   }
-  .drink-summary {
+  .drink-info {
     margin: 15px 0;
   }
-  .drink-info {
+
+  /* when collapsed */
+  .drink-summary {
     display: flex;
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
   }
-  .ingredients {
+  .ingredients-summary {
     width: 60%;
     text-align: left;
   }
-  .drink-metadata {
+  .drink-metadata-summary {
     width: 35%;
     text-align: left;
+  }
+
+  /* when expanded */
+  .drink-details * {
+    text-align: start;
+    margin: 10px 0;
+  }
+  .drink-metadata-details {
+    display: flex;
+  }
+  .drink-metadata-details div {
+    margin-right: 25px;
+  }
+  .drink-comments {
+    text-align: start;
+  }
+  .ingredient-instructions {
+    margin: 0;
   }
 </style>

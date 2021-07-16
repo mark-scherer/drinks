@@ -5,7 +5,7 @@
     <table class="drink-table">
       <tbody>
         <tr v-for="drink in drinks" v-bind:key="drink.drink">
-          <DrinkSummary v-bind:drink_info="drink"/>
+          <DrinkInfo v-bind:drink_info="drink" v-model="drink.expanded"/>
         </tr>
       </tbody>
     </table>
@@ -25,7 +25,7 @@
 
 <script>
 import { desanitize } from '../utils'
-import DrinkSummary from './DrinkSummary.vue'
+import DrinkInfo from './DrinkInfo.vue'
 import IngredientSummary from './IngredientSummary.vue'
 const _ = require('lodash')
 
@@ -37,7 +37,7 @@ export default {
     drinksLoaded: Boolean
   },
   components: {
-    DrinkSummary,
+    DrinkInfo,
     IngredientSummary
   },
   data() {
@@ -58,6 +58,7 @@ export default {
   watch: {
     drinks: {
       handler(val) {
+        // update all ingredients
         this.all_ingredients = _.chain(val)
           .map(drink => drink.ingredient_info)
           .flatten()
