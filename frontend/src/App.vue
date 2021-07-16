@@ -206,4 +206,8 @@ export default {
     font-weight: bolder;
     
   }
+
+  .icon {
+    height: 1.75em;
+  }
 </style>

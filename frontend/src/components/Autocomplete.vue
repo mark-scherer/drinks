@@ -274,9 +274,6 @@ export default {
     margin: 0 4px 0 10px;
     justify-content: space-between;
   }
-  .icon {
-    height: 1.75em;
-  }
   .group-icon {
     margin: 0 5px 0 -5px;
   }
