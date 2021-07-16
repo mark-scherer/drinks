@@ -58,24 +58,32 @@ const recommend_drinks = async function({n, must_include_ingredients, preferred_
 
 /*
   ranks eligible_drinks according to rec algo
-  includes preferential treatment to preferred_ingredients if only_preferred_ingredients = true
-    (aotherwise has been accounted for already in recommend_drinks)
+  includes preferential treatment to preferred_ingredients if only_preferred_ingredients === true
+    (otherwise has been accounted for already in recommend_drinks)
 */
 const score_drink = function(drink, preferred_ingredients, only_preferred_ingredients) {
+  
+  // general scoring theory: scores centered around 0
+  let score_details = {}
+
   // start with source ratings, weighted by number of ratings
-  let score = drink.source_rating_count && drink.source_avg_rating ?
-    (1 + Math.min(drink.source_rating_count, scoring_config.RATING_COUNT_CAP) * scoring_config.RATING_COUNT_FACTOR) * (drink.source_avg_rating - scoring_config.RATING_BENCHMARK) :
-    0
+  if (drink.source_rating_count && drink.source_avg_rating) {
+    const normalized_avg_rating = drink.source_avg_rating - scoring_config.RATING_BENCHMARK
+    score_details.ratings = scoring_config.RATINGS_WEIGHT * normalized_avg_rating * Math.log(drink.source_rating_count)  // ln(30k) ~= 10, ~30k is max rating count
+  }
 
   // preferred_ingredients && only_preferred_ingredients account for preferred ingredients
-  if (!only_preferred_ingredients && preferred_ingredients) {
-    score -= drink.nonpreferred_ingredient_info.length * scoring_config.UNPREFERRED_INGREDIENT_PENALTY
+  if (!only_preferred_ingredients && preferred_ingredients && preferred_ingredients.length > 0) {
+    score_details.nonpreferred_ingredients_penalty = -1 * drink.nonpreferred_ingredient_info.length * scoring_config.NONPREFERRED_INGREDIENT_PENALTY
   }
 
   // add random shuffle
-  score += _.random(-1*scoring_config.RANDOM_SHUFFLE, scoring_config.RANDOM_SHUFFLE, true)
+  score_details.random_shuffle = _.random(-1*scoring_config.RANDOM_SHUFFLE, scoring_config.RANDOM_SHUFFLE, true)
 
-  return score
+  return {
+    score_details,
+    score : _.reduce(score_details, (result, score_impact, category) => result += score_impact, 0)
+  }
 }
 
 // helper function for parsing drinks returned by query
@@ -95,7 +103,7 @@ const parse_drink = (drink, preferred_ingredients, only_preferred_ingredients) =
   }
   return {
     ...unscored_drink,
-    score                         : score_drink(unscored_drink, preferred_ingredients, only_preferred_ingredients)
+    ...score_drink(unscored_drink, preferred_ingredients, only_preferred_ingredients)
   }
 }
 

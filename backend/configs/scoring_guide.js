@@ -30,15 +30,11 @@ const scoring_guide = {
 
   /* rating's influence controls */
   RATING_BENCHMARK: {
-    description   : 'avg rating below of which greater rating count negatively influence score',
+    description   : 'baseline avg rating below of which ratings negatively influence score',
     required      : true
   },
-  RATING_COUNT_FACTOR: {
-    description   : 'multiplier on capped rating count prior to weighting by avg rating',
-    required      : true
-  },
-  RATING_COUNT_CAP: {
-    description   : 'cap on rating count greater than which more ratings provide no additional scoring impact',
+  RATINGS_WEIGHT: {
+    description   : 'final multiplier on rating\'s influence on score, which ranges from ~-50 - ~+50',
     required      : true
   }
 }
