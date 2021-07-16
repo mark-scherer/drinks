@@ -1,7 +1,7 @@
-<!-- IngredientSummary: basic overview of ingredient -->
+<!-- IngredientSummary: basic overview of ingredients -->
 
 <template>
-  <div class="ingredient-summary">
+  <div class="ingredient-summary" :class="{preferred: ingredient_info.preferred }">
     <template v-if="ingredient_info.premods_str.length > 0" class="mod">
       <span class="mod">
         {{ingredient_info.premods_str}}
@@ -33,5 +33,10 @@ export default {
 </script>
 
 <style scoped>
-  
+  .ingredient-summary.preferred {
+    background: #ccf7c6;
+  }
+  .ingredient-summary:not(.preferred) {
+    background: #ffe0e0;
+  }
 </style>

@@ -69,11 +69,12 @@ export default {
               premods_str,
               postmods_str,
               ingredient_str,
-              full_str: `${premods_str} ${ingredient_str} ${postmods_str}`.trim()
+              full_str: `${premods_str} ${ingredient_str} ${postmods_str}`.trim(),
+              ..._.pick(ingredient_info, ['preferred'])
             }
           })
           .uniqBy(ingredient_info => ingredient_info.full_str)
-          .sortBy(ingredient_info => ingredient_info.full_str)
+          .sortBy(['preferred', 'full_str'])
           .value()
       }
     }
@@ -84,6 +85,7 @@ export default {
 <style scoped>
   .drink-list {
     margin: 0px auto;
+    max-width: 600px;
   }
   .drink-tail {
     margin-bottom: 20px;
