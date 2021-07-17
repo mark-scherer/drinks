@@ -28,7 +28,7 @@
           >{{updateDrinksButton}}</button>
       </div>
     </div>
-    <DrinkList :drinks="drinks" :totalDrinksCount="total_drinks_count" :loading="loading" :drinksLoaded="drinks_loaded"
+    <DrinkList :drinks="drinks" :totalDrinksCount="total_drinks_count" :loading="loading" :drinksLoaded="drinks_loaded" :excluded_drinks="excluded_drinks"
       @replaceDrink="replaceDrink"
     />
   </div>

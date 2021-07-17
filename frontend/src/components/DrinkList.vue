@@ -37,13 +37,16 @@ import DrinkInfo from './DrinkInfo.vue'
 import IngredientSummary from './IngredientSummary.vue'
 const _ = require('lodash')
 
+const MAX_DISPLAYED_DRINK_COUNT = 100
+
 export default {
   name: 'DrinkList',
   props: {
     drinks: Array,
     totalDrinksCount: Number,
     loading: Boolean,
-    drinksLoaded: Boolean
+    drinksLoaded: Boolean,
+    excluded_drinks: Array
   },
   emits: ['replaceDrink'],
   components: {
@@ -58,11 +61,23 @@ export default {
   computed: {
     otherDrinksMsg() {
       const other_drinks = this.totalDrinksCount - this.drinks.length
-      return this.drinks.length > 0 ?
+      const excluded_drinks_msg = this.excluded_drinks.length > 0 ?
+        this.excluded_drinks.length > 1 ?
+          ` (excluding ${this.excluded_drinks.length} drinks)` :
+          ` (excluding ${this.excluded_drinks.length} drink)`
+        : ''
+        
+      
+      const other_drinks_count_str = other_drinks > MAX_DISPLAYED_DRINK_COUNT ?
+        `${MAX_DISPLAYED_DRINK_COUNT}+` : String(other_drinks)
+
+      const base_msg = this.drinks.length > 0 ?
         other_drinks > 0 ?
-          `found ${other_drinks} other drinks` :
+          `found ${other_drinks_count_str} other drinks` :
           `didn't find any other drinks` :  
         `Didn't find any drinks. Try widening your search?`
+      
+      return base_msg + excluded_drinks_msg
     }
   },
   watch: {
