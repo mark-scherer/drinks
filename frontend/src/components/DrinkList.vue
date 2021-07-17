@@ -4,8 +4,10 @@
   <div class="drink-list">
     <table class="drink-table">
       <tbody>
-        <tr v-for="drink in drinks" v-bind:key="drink.drink">
-          <DrinkInfo v-bind:drink_info="drink" v-model="drink.expanded"/>
+        <tr v-for="(drink, index) in drinks" v-bind:key="drink.drink">
+          <DrinkInfo v-bind:drink_info="drink" v-model="drink.expanded"
+            @replaceDrink="replaceDrink(index)"
+          />
         </tr>
       </tbody>
     </table>
@@ -13,7 +15,7 @@
     <div class="drink-tail" :class="{hide: !drinksLoaded || loading}">{{ otherDrinksMsg }}</div>
 
     <div class="drinks-loading" :class="{hide: !loading}">
-      <img class="icon-big" src="../assets/dots-loading.gif"/>
+      <img class="icon icon-big" src="../assets/dots-loading.gif"/>
     </div>
     
     <div class="ingredient-list">
@@ -43,6 +45,7 @@ export default {
     loading: Boolean,
     drinksLoaded: Boolean
   },
+  emits: ['replaceDrink'],
   components: {
     DrinkInfo,
     IngredientSummary
@@ -85,6 +88,11 @@ export default {
           .sortBy(['preferred', 'full_str'])
           .value()
       }
+    }
+  },
+  methods: {
+    replaceDrink(index) {
+      this.$emit('replaceDrink', index)
     }
   }
 }

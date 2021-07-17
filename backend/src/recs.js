@@ -23,7 +23,8 @@ const POSTGRES_CONCURRENCY = 4
     - preferred_ingredients       : list of preferred ingredients to include in recommended reciepes (see input formatting)
     - only_preferred_ingredients  : bool, can receipes only include ingredients from preferred_ingredients or are they just preferred
     - alcoholic_drinks            : bool, whether to return alcoholic or non alocoholic drinks
-    - excluded_drinks             : list of drinks to exclude from selection
+    - current_drinks              : list of previously selected drink names
+    - excluded_drinks             : list of drink names to exclude from selection
   - input formatting:
     - applies to must_include_ingredients, preferred_ingredients
     - due to nature of ingredients, sometimes users can specify multiple acceptable alternatives or can be parent/child ingredient relationships
@@ -31,27 +32,29 @@ const POSTGRES_CONCURRENCY = 4
     - lowest-level element formatting (ex: group_1_option_1, group_2_only_option):
       - must_include_ingredients  : { ingredient: 'ingredient_name', premods: [], postmods: [] }
       - preferred_ingredients     : 'ingredient_name
-  - returns: list of suggested drinks
+  - return:
+    - drinks        : list of suggested drinks excluding passed current_drinks
+    - drink_count   : count of total qualifying drinks, excluding passed current drinks
 */
-const recommend_drinks = async function({n, must_include_ingredients, preferred_ingredients, only_preferred_ingredients, alcoholic_drinks, excluded_drinks}) {
-  console.log(`recs.recommend_drinks: recieved request: ${JSON.stringify({ n, must_include_ingredients, preferred_ingredients, only_preferred_ingredients, alcoholic_drinks })}`)
+const recommend_drinks = async function({n, must_include_ingredients, preferred_ingredients, only_preferred_ingredients, alcoholic_drinks, current_drinks, excluded_drinks}) {
+  console.log(`recs.recommend_drinks: recieved request: ${JSON.stringify({ n, must_include_ingredients, preferred_ingredients, only_preferred_ingredients, alcoholic_drinks, current_drinks, excluded_drinks })}`)
 
-  let drinks = [], drink_count, continue_loop = true
-  while (drinks.length < n && continue_loop) {
+  let new_drinks = [], drink_count, continue_loop = true
+  while (new_drinks.length < n && continue_loop) {
     const rec_info = await _recommend_drink({
-      selected_drinks: _.map(drinks, 'drink'),
+      current_drinks: (current_drinks || []).concat(_.map(new_drinks, 'drink')),
       must_include_ingredients,
       preferred_ingredients,
       only_preferred_ingredients,
       alcoholic_drinks,
       excluded_drinks
     })
-    drink_count = rec_info.drink_count + drinks.length // _recommend_drink(...) excludes selected_drinks from count
-    if (rec_info.drink) drinks.push(rec_info.drink)
+    drink_count = rec_info.drink_count + new_drinks.length
+    if (rec_info.drink) new_drinks.push(rec_info.drink)
     else continue_loop = false
   }
   return {
-    drinks,
+    drinks: new_drinks,
     drink_count
   }
 }
@@ -110,18 +113,15 @@ const parse_drink = (drink, preferred_ingredients, only_preferred_ingredients) =
 /*
   recommend single drink
   - inputs:
-    - selected_drinks     : list of drinks selected by previous cycles
     - see recommend_drinks(...) for input, input_formatting notes: must_include_ingredients, preferred_ingredients, only_preferred_ingredients, alcoholic_drinks, excluded_drinks
   - returns: single drink recommendation
 */
-const _recommend_drink = async function({selected_drinks, must_include_ingredients, preferred_ingredients, only_preferred_ingredients, alcoholic_drinks, excluded_drinks}) {
-  const NOT_YET_IMPLEMENTED = {excluded_drinks}
-  if (_.some(Object.values(NOT_YET_IMPLEMENTED))) throw Error(`recs._recommend_drink: specified input not yet implemented: ${JSON.stringify(NOT_YET_IMPLEMENTED)}`)
+const _recommend_drink = async function({current_drinks, must_include_ingredients, preferred_ingredients, only_preferred_ingredients, alcoholic_drinks, excluded_drinks}) {
   if (!alcoholic_drinks) throw Error(`recs._recommend_drink: not yet implemented: ${JSON.stringify({ alcoholic_drinks })}`)
 
   await utils.pg.connect(config.pg_config)
 
-  const drinks_to_exclude = (selected_drinks || []).concat(excluded_drinks || [])
+  const drinks_to_exclude = (current_drinks || []).concat(excluded_drinks || [])
   const _preferred_ingredients = _.flatten(preferred_ingredients)
 
   const must_include_clause = must_include_ingredients && must_include_ingredients.length > 0 ?
@@ -130,7 +130,7 @@ const _recommend_drink = async function({selected_drinks, must_include_ingredien
     }).join(' and ') : ''
 
   // only used if only_preferred_ingredients === true, otherwised preferred_ingredients must be handled post-query
-  const preferred_ingredients_clause = only_preferred_ingredients && _preferred_ingredients && preferred_ingredients.length > 0 ?
+  const preferred_ingredients_clause = only_preferred_ingredients && _preferred_ingredients && _preferred_ingredients.length > 0 ?
     `ingredient_names <@ array[${_.map(_preferred_ingredients, ingredient => `'${ingredient}'`).join()}]` : ''
   
     const drinks_query = `

@@ -4,7 +4,12 @@
 
 <template>
   <div class="drink-info">
-      <h1>{{desanitize(drink_info.drink, {capitalize: true})}}</h1>
+      <div class="drink-banner">
+        <h1>{{desanitize(drink_info.drink, {capitalize: true})}}</h1>
+        <img class="icon icon-small" src="https://img.icons8.com/ios/50/000000/data-in-both-directions.png"
+          @click="replaceDrink"
+        />
+      </div>
 
       <!-- drink-summary when drink collapsed -->
       <div class="drink-summary" :class="{hide: modelValue}">
@@ -66,7 +71,7 @@ export default {
       required: true,
     }
   },
-  emits: ['update:modelValue'],
+  emits: ['update:modelValue', 'replaceDrink'],
   methods: {
     desanitize: utils.desanitize,
     toggle() {
@@ -95,16 +100,15 @@ export default {
       const postmods_html = _.map(ingredient_info.postmods, mod => `<span class="mod">${this.desanitize(mod)}</span>`).join('<span> </span>')
 
       return `${quantity_str} ${premods_html} ${this.desanitize(ingredient_info.ingredient)} ${postmods_html}`
+    },
+    replaceDrink() {
+      this.$emit('replaceDrink')
     }
   },
 }
 </script>
 
 <style scoped>
-  h1 {
-    text-align: left;
-    margin-bottom: 10px;
-  }
   p {
     display: inline
   }
@@ -113,6 +117,17 @@ export default {
   }
   .drink-info {
     margin: 15px 0;
+  }
+
+  /* top banner */
+  .drink-banner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  h1 {
+    text-align: left;
+    margin-bottom: 10px;
   }
 
   /* when collapsed */

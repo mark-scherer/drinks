@@ -24,11 +24,13 @@
       </div>
       <div class="get-drinks">
           <button
-            @click = 'updateDrinks'
-          >Get drinks</button>
+            @click = 'updateAllDrinks'
+          >{{updateDrinksButton}}</button>
       </div>
     </div>
-    <DrinkList :drinks="drinks" :totalDrinksCount="total_drinks_count" :loading="loading" :drinksLoaded="drinks_loaded"/>
+    <DrinkList :drinks="drinks" :totalDrinksCount="total_drinks_count" :loading="loading" :drinksLoaded="drinks_loaded"
+      @replaceDrink="replaceDrink"
+    />
   </div>
 </template>
 
@@ -42,13 +44,15 @@ import Autocomplete from './components/Autocomplete.vue'
 import Switch from './components/Switch.vue'
 
 const SERVER_URL = 'http://localhost:8000'
+const DRINK_COUNT = 3
 
-const getIngredients = async function() {
+// fetches ingredients from api
+const fetchIngredients = function() {
   const url = new URL(`${SERVER_URL}/ingredients`)
   return fetch(url)
     .then(response => { 
       if (response.status !== 200) {
-        console.error(`getIngredients got non-200 response: ${response.status}`)
+        console.error(`fetchIngredients got non-200 response: ${response.status}`)
       }
       return response.json()
         .then(parsed_response => {
@@ -74,7 +78,39 @@ const getIngredients = async function() {
           return [ ...individual_ingredients, ...families ]
         })
     })
-    .catch(err => console.error(`error in getIngredients request: ${err}`))
+    .catch(err => console.error(`error in fetchIngredients request: ${err}`))
+}
+
+const fetchDrinks = function(n, _must_include_ingredients, _preferred_ingredients, only_preferred_ingredients, excluded_drinks, current_drinks) {
+  const url = new URL(`${SERVER_URL}/drinks`)
+  const must_include_ingredients = _.map(_must_include_ingredients, ingredient => {
+    return ingredient.category === 'group' ?
+      _.map(ingredient.children, child => sanitize(child.name)) :
+      [ sanitize(ingredient.name) ]
+  })
+  const preferred_ingredients = _.map(_preferred_ingredients, ingredient => {
+    return ingredient.category === 'group' ?
+      _.map(ingredient.children, child => sanitize(child.name)) :
+      [ sanitize(ingredient.name) ]
+  })
+  const params = {
+    n,
+    must_include_ingredients,
+    preferred_ingredients,
+    only_preferred_ingredients,
+    alcoholic_drinks: true,
+    excluded_drinks,
+    current_drinks
+  }
+  url.search = qs.stringify(params, { encode: false })
+
+  return fetch(url)
+    .then(response => {
+      if (response.status !== 200) {
+        console.error(`getDrinks got non-200 response: ${response.status}`)
+      }
+      return response.json()
+    })
 }
 
 export default {
@@ -86,12 +122,18 @@ export default {
   },
   data() {
     return {
-      drinks: [],
-      total_drinks_count: 0,
-      ingredients: [],
+      /* user inputs state */
       must_include_ingredients: [],
       preferred_ingredients: [],
       only_preferred_ingredients: false,
+
+      /* current results state */
+      ingredients: [],
+      drinks: [],
+      total_drinks_count: 0,
+      excluded_drinks: [],
+
+      /* page lifecycle state */
       loading: false,
       drinks_loaded: false
     }
@@ -101,56 +143,49 @@ export default {
       return this.only_preferred_ingredients ?
         'Optional! All ingredients will come from this list' :
         'Optional! We\'ll give preference to drinks with ingredients from this list'
+    },
+    updateDrinksButton() {
+      return this.drinks_loaded ?
+        'Get new drinks' :
+        'Get drinks'
     }
   },
   methods: {
-    updateDrinks() {
-      // console.log(JSON.stringify({ must_include_ingredients: this.must_include_ingredients }))
-      const url = new URL(`${SERVER_URL}/drinks`)
-      const must_include_ingredients = _.map(this.must_include_ingredients, ingredient => {
-        return ingredient.category === 'group' ?
-          _.map(ingredient.children, child => sanitize(child.name)) :
-          [ sanitize(ingredient.name) ]
-      })
-      const preferred_ingredients = _.map(this.preferred_ingredients, ingredient => {
-        return ingredient.category === 'group' ?
-          _.map(ingredient.children, child => sanitize(child.name)) :
-          [ sanitize(ingredient.name) ]
-      })
-      const params = {
-        n: 3,
-        must_include_ingredients,
-        preferred_ingredients,
-        only_preferred_ingredients: this.only_preferred_ingredients,
-        alcoholic_drinks: true
-      }
-      url.search = qs.stringify(params, { encode: false })
-
-      fetch(url)
-        .then(response => { 
-          if (response.status !== 200) {
-            console.error(`getDrinks got non-200 response: ${response.status}`)
-          }
-          response.json()
-            .then(parsed_response => {
-              this.drinks = parsed_response.drinks
-              this.total_drinks_count = parsed_response.drink_count
-              
-              this.loading = false
-              this.drinks_loaded = true
-            })
-        })
-        .catch(err => console.error(`error in getDrinks request: ${err}`))
-      this.loading = true
-    },
     updateIngredients() {
-      getIngredients()
+      fetchIngredients()
         .then(ingredients => {
           this.ingredients = ingredients
           console.log(JSON.stringify({ ingredients: this.ingredients }))
         })
         .catch(err => console.error(`error running updateIngredients: ${err}`))
     },
+    updateAllDrinks() {
+      this.excluded_drinks = []
+      this.loading = true
+      fetchDrinks(DRINK_COUNT, this.must_include_ingredients, this.preferred_ingredients, this.only_preferred_ingredients, this.excluded_drinks)
+        .then(drinks_response => {
+          this.drinks = drinks_response.drinks
+          this.total_drinks_count = drinks_response.drink_count
+
+          this.loading = false
+          this.drinks_loaded = true
+        })
+    },
+    replaceDrink(index) {
+      console.log(`replacing drink: ${index}`)
+      const removed_drink = this.drinks.splice(index, 1)[0]
+      this.excluded_drinks.push(removed_drink.drink)
+
+      this.loading = true
+      fetchDrinks(1, this.must_include_ingredients, this.preferred_ingredients, this.only_preferred_ingredients, this.excluded_drinks, _.map(this.drinks, 'drink'))
+        .then(drinks_response => {
+          this.total_drinks_count = this.drinks.length + drinks_response.drink_count
+          this.drinks = this.drinks.concat(drinks_response.drinks)
+
+          this.loading = false
+          this.drinks_loaded = true
+        })
+    }
   },
   mounted() {
     this.updateIngredients()
@@ -213,6 +248,10 @@ export default {
 
   .icon {
     height: 1.75em;
+    cursor: pointer;
+  }
+  .icon-small {
+    height: 1.25em;
   }
   .icon-big {
     height: 4em;
