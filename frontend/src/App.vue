@@ -161,6 +161,7 @@ export default {
     },
     updateAllDrinks() {
       this.excluded_drinks = []
+      this.drinks = []
       this.loading = true
       fetchDrinks(DRINK_COUNT, this.must_include_ingredients, this.preferred_ingredients, this.only_preferred_ingredients, this.excluded_drinks)
         .then(drinks_response => {
