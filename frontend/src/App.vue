@@ -28,7 +28,7 @@
           >Get drinks</button>
       </div>
     </div>
-    <DrinkList :drinks="drinks" :totalDrinksCount="total_drinks_count" :drinksLoaded="drinks_loaded"/>
+    <DrinkList :drinks="drinks" :totalDrinksCount="total_drinks_count" :loading="loading" :drinksLoaded="drinks_loaded"/>
   </div>
 </template>
 
@@ -92,6 +92,7 @@ export default {
       must_include_ingredients: [],
       preferred_ingredients: [],
       only_preferred_ingredients: false,
+      loading: false,
       drinks_loaded: false
     }
   },
@@ -134,10 +135,13 @@ export default {
             .then(parsed_response => {
               this.drinks = parsed_response.drinks
               this.total_drinks_count = parsed_response.drink_count
+              
+              this.loading = false
               this.drinks_loaded = true
             })
         })
         .catch(err => console.error(`error in getDrinks request: ${err}`))
+      this.loading = true
     },
     updateIngredients() {
       getIngredients()
@@ -209,5 +213,8 @@ export default {
 
   .icon {
     height: 1.75em;
+  }
+  .icon-big {
+    height: 4em;
   }
 </style>

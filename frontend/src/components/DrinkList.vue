@@ -9,7 +9,13 @@
         </tr>
       </tbody>
     </table>
-    <div class="drink-tail" :class="{hide: !drinksLoaded}">{{ otherDrinksMsg }}</div>
+    
+    <div class="drink-tail" :class="{hide: !drinksLoaded || loading}">{{ otherDrinksMsg }}</div>
+
+    <div class="drinks-loading" :class="{hide: !loading}">
+      <img class="icon-big" src="../assets/dots-loading.gif"/>
+    </div>
+    
     <div class="ingredient-list">
       <h1 v-if="all_ingredients.length > 0">Ingredients</h1>
       <table class="ingredient-table">
@@ -34,6 +40,7 @@ export default {
   props: {
     drinks: Array,
     totalDrinksCount: Number,
+    loading: Boolean,
     drinksLoaded: Boolean
   },
   components: {
