@@ -22,10 +22,20 @@
           <Switch v-model="only_preferred_ingredients"/>
         </div>
       </div>
-      <div class="get-drinks">
+      <div class='drink-buttons'>
+        <div class="get-drinks">
           <button
             @click = 'updateAllDrinks'
           >{{updateDrinksButton}}</button>
+        </div>
+         <div class="share-drinks" v-if="drinks_loaded">
+          <button
+            @click = 'copyDrinksLink'
+          >
+            <div>{{shareDrinksButton}}</div>
+            <img class="icon icon-small" src="https://img.icons8.com/material-sharp/50/000000/copy.png"/>
+          </button>
+        </div>
       </div>
     </div>
     <DrinkList :drinks="drinks" :totalDrinksCount="total_drinks_count" :loading="loading" :drinksLoaded="drinks_loaded" :excluded_drinks="excluded_drinks"
@@ -135,7 +145,8 @@ export default {
 
       /* page lifecycle state */
       loading: false,
-      drinks_loaded: false
+      drinks_loaded: false,
+      link_copied: false
     }
   },
   computed: {
@@ -148,6 +159,12 @@ export default {
       return this.drinks_loaded ?
         'Get new drinks' :
         'Get drinks'
+    },
+    shareDrinksButton() {
+      return this.link_copied ?
+        'Copied!' :
+        'Get link to drinks'
+        
     }
   },
   methods: {
@@ -170,6 +187,7 @@ export default {
 
           this.loading = false
           this.drinks_loaded = true
+          this.link_copied = false
         })
     },
     replaceDrink(index) {
@@ -185,8 +203,29 @@ export default {
 
           this.loading = false
           this.drinks_loaded = true
+          this.link_copied = false
         })
+    },
+    getDrinksLink() {
+      const url = new URL(window.location)
+      const params = new URLSearchParams()
+      params.set('drinks', _.map(this.drinks, 'drink'))
+      return `${url.toString()}?${params.toString()}`
+    },
+    copyDrinksLink() {
+      const url = this.getDrinksLink()
+      console.log(`copying ${url}`)
+
+      const tmp = document.createElement('textarea')
+      tmp.innerText = url
+      document.getElementById('app').appendChild(tmp)
+      tmp.select()
+      document.execCommand('copy')
+      tmp.remove()
+
+      this.link_copied = true
     }
+
   },
   mounted() {
     this.updateIngredients()
@@ -205,9 +244,26 @@ export default {
     margin: 60px auto 0px auto;
     max-width: 95%;
   }
+  .icon {
+    height: 1.75em;
+    cursor: pointer;
+  }
+  .icon-small {
+    height: 1.25em;
+  }
+  .icon-big {
+    height: 4em;
+  }
+  .hide {
+    display: none !important;
+  }
+
+  /* input section */
   .drinks-input {
     margin-bottom: 20px;
   }
+
+  /* input fields */
   .select-label {
     font-size: 1.25em;
     text-align: start;
@@ -221,8 +277,24 @@ export default {
     font-size: 1em;
     display: inline-block;
   }
-  .get-drinks {
+
+  /* styling of specific drink categories */
+  .dropdown-choice.group .suggestion-category {
+    font-weight: bolder;
+  }
+
+  /* input buttons */
+  .drink-buttons {
+    display: flex;
+    justify-content: center;
     margin-top: 10px;
+  }
+  .drink-buttons * {
+    margin: 0 10px;
+  }
+  .share-drinks button {
+    display: flex;
+    padding-right: 10px;
   }
   button {
     font: inherit;
@@ -231,30 +303,10 @@ export default {
     border: none;
     border-radius: 10px;
     cursor: pointer;
-    background: #f0f0f0;
+    background: #d1cfcf;
     outline: none;
   }
   button:hover {
-    background: #cfcfcf;
-  }
-  .hide {
-    display: none !important;
-  }
-
-  /* styling of specific drink categories */
-  .dropdown-choice.group .suggestion-category {
-    font-weight: bolder;
-    
-  }
-
-  .icon {
-    height: 1.75em;
-    cursor: pointer;
-  }
-  .icon-small {
-    height: 1.25em;
-  }
-  .icon-big {
-    height: 4em;
+    background: #a3a3a3;
   }
 </style>
