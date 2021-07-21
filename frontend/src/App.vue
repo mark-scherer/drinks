@@ -38,7 +38,7 @@
         </div>
       </div>
     </div>
-    <DrinkList :drinks="drinks" :totalDrinksCount="total_drinks_count" :loading="loading" :drinksLoaded="drinks_loaded" :excluded_drinks="excluded_drinks"
+    <DrinkList :drinks="drinks" :totalDrinksCount="total_drinks_count" :loading="loading" :drinksLoaded="drinks_loaded" :showCountMsg="show_count_msg" :excluded_drinks="excluded_drinks"
       @replaceDrink="replaceDrink"
     />
   </div>
@@ -91,8 +91,8 @@ const fetchIngredients = function() {
     .catch(err => console.error(`error in fetchIngredients request: ${err}`))
 }
 
-const fetchDrinks = function(n, _must_include_ingredients, _preferred_ingredients, only_preferred_ingredients, excluded_drinks, current_drinks) {
-  const url = new URL(`${SERVER_URL}/drinks`)
+const fetchDrinkRecs = function(n, _must_include_ingredients, _preferred_ingredients, only_preferred_ingredients, excluded_drinks, current_drinks) {
+  const url = new URL(`${SERVER_URL}/drinks/recs`)
   const must_include_ingredients = _.map(_must_include_ingredients, ingredient => {
     return ingredient.category === 'group' ?
       _.map(ingredient.children, child => sanitize(child.name)) :
@@ -112,6 +112,20 @@ const fetchDrinks = function(n, _must_include_ingredients, _preferred_ingredient
     excluded_drinks,
     current_drinks
   }
+  url.search = qs.stringify(params, { encode: false })
+
+  return fetch(url)
+    .then(response => {
+      if (response.status !== 200) {
+        console.error(`getDrinks got non-200 response: ${response.status}`)
+      }
+      return response.json()
+    })
+}
+
+const fetchDrinksInfo = function(drinks) {
+  const url = new URL(`${SERVER_URL}/drinks/info`)
+  const params = { drinks }
   url.search = qs.stringify(params, { encode: false })
 
   return fetch(url)
@@ -146,7 +160,8 @@ export default {
       /* page lifecycle state */
       loading: false,
       drinks_loaded: false,
-      link_copied: false
+      link_copied: false,
+      show_count_msg: true
     }
   },
   computed: {
@@ -180,7 +195,7 @@ export default {
       this.excluded_drinks = []
       this.drinks = []
       this.loading = true
-      fetchDrinks(DRINK_COUNT, this.must_include_ingredients, this.preferred_ingredients, this.only_preferred_ingredients, this.excluded_drinks)
+      fetchDrinkRecs(DRINK_COUNT, this.must_include_ingredients, this.preferred_ingredients, this.only_preferred_ingredients, this.excluded_drinks)
         .then(drinks_response => {
           this.drinks = drinks_response.drinks
           this.total_drinks_count = drinks_response.drink_count
@@ -188,6 +203,7 @@ export default {
           this.loading = false
           this.drinks_loaded = true
           this.link_copied = false
+          this.show_count_msg = true
         })
     },
     replaceDrink(index) {
@@ -196,7 +212,7 @@ export default {
       this.excluded_drinks.push(removed_drink.drink)
 
       this.loading = true
-      fetchDrinks(1, this.must_include_ingredients, this.preferred_ingredients, this.only_preferred_ingredients, this.excluded_drinks, _.map(this.drinks, 'drink'))
+      fetchDrinkRecs(1, this.must_include_ingredients, this.preferred_ingredients, this.only_preferred_ingredients, this.excluded_drinks, _.map(this.drinks, 'drink'))
         .then(drinks_response => {
           this.total_drinks_count = this.drinks.length + drinks_response.drink_count
           this.drinks = this.drinks.concat(drinks_response.drinks)
@@ -204,10 +220,29 @@ export default {
           this.loading = false
           this.drinks_loaded = true
           this.link_copied = false
+          this.show_count_msg = true
         })
     },
+    getUrlDrinksInfo() {
+      const params = new URLSearchParams(window.location.search)
+      const urlDrinks = params.get('drinks')
+      if (urlDrinks && urlDrinks.length > 0) {
+        this.loading = true
+        fetchDrinksInfo(urlDrinks)
+          .then(drinks_info => {
+            this.drinks = drinks_info
+
+            this.loading = false
+            this.drinks_loaded = true
+            this.link_copied = false
+            this.show_count_msg = false
+          })
+      }
+    },
+
     getDrinksLink() {
       const url = new URL(window.location)
+      url.searchParams.delete('drinks')
       const params = new URLSearchParams()
       params.set('drinks', _.map(this.drinks, 'drink'))
       return `${url.toString()}?${params.toString()}`
@@ -228,7 +263,8 @@ export default {
 
   },
   mounted() {
-    this.updateIngredients()
+    this.updateIngredients(),
+    this.getUrlDrinksInfo()
   }
 }
 

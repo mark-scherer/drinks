@@ -12,7 +12,8 @@ const ingredients_api = require('./api/ingredients')
 const app = new Koa()
 const router = new Router()
 
-router.get('/drinks', drinks_api.get)
+router.get('/drinks/recs', drinks_api.recs.get)
+router.get('/drinks/info', drinks_api.info.get)
 router.get('/ingredients', ingredients_api.get)
 
 app

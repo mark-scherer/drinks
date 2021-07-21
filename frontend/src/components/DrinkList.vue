@@ -46,6 +46,7 @@ export default {
     totalDrinksCount: Number,
     loading: Boolean,
     drinksLoaded: Boolean,
+    showCountMsg: Boolean,
     excluded_drinks: Array
   },
   emits: ['replaceDrink'],
@@ -60,6 +61,8 @@ export default {
   },
   computed: {
     otherDrinksMsg() {
+      if (!this.showCountMsg) return ''
+
       const other_drinks = this.totalDrinksCount - this.drinks.length
       const excluded_drinks_msg = this.excluded_drinks.length > 0 ?
         this.excluded_drinks.length > 1 ?
