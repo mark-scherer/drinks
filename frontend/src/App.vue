@@ -28,14 +28,6 @@
             @click = 'updateAllDrinks'
           >{{updateDrinksButton}}</button>
         </div>
-         <div class="share-drinks" v-if="drinks_loaded">
-          <button
-            @click = 'copyDrinksLink'
-          >
-            <div>{{shareDrinksButton}}</div>
-            <img class="icon icon-small" src="https://img.icons8.com/material-sharp/50/000000/copy.png"/>
-          </button>
-        </div>
       </div>
     </div>
     <DrinkList :drinks="drinks" :totalDrinksCount="total_drinks_count" :loading="loading" :drinksLoaded="drinks_loaded" :showCountMsg="show_count_msg" :excluded_drinks="excluded_drinks"
@@ -160,7 +152,6 @@ export default {
       /* page lifecycle state */
       loading: false,
       drinks_loaded: false,
-      link_copied: false,
       show_count_msg: true
     }
   },
@@ -174,12 +165,6 @@ export default {
       return this.drinks_loaded ?
         'Get new drinks' :
         'Get drinks'
-    },
-    shareDrinksButton() {
-      return this.link_copied ?
-        'Copied!' :
-        'Get link to drinks'
-        
     }
   },
   methods: {
@@ -202,8 +187,9 @@ export default {
 
           this.loading = false
           this.drinks_loaded = true
-          this.link_copied = false
           this.show_count_msg = true
+
+          this.updateQueryString()
         })
     },
     replaceDrink(index) {
@@ -219,8 +205,9 @@ export default {
 
           this.loading = false
           this.drinks_loaded = true
-          this.link_copied = false
           this.show_count_msg = true
+
+          this.updateQueryString()
         })
     },
     getUrlDrinksInfo() {
@@ -234,33 +221,19 @@ export default {
 
             this.loading = false
             this.drinks_loaded = true
-            this.link_copied = false
             this.show_count_msg = false
           })
       }
     },
-
-    getDrinksLink() {
-      const url = new URL(window.location)
-      url.searchParams.delete('drinks')
-      const params = new URLSearchParams()
-      params.set('drinks', _.map(this.drinks, 'drink'))
-      return `${url.toString()}?${params.toString()}`
-    },
-    copyDrinksLink() {
-      const url = this.getDrinksLink()
-      console.log(`copying ${url}`)
-
-      const tmp = document.createElement('textarea')
-      tmp.innerText = url
-      document.getElementById('app').appendChild(tmp)
-      tmp.select()
-      document.execCommand('copy')
-      tmp.remove()
-
-      this.link_copied = true
+    updateQueryString() {
+      if (history.pushState) {
+        const url = new URL(window.location)
+        url.searchParams.delete('drinks')
+        url.searchParams.set('drinks', _.map(this.drinks, 'drink'))
+        window.history.pushState({path: url.toString()}, '', url.toString())
+        console.log(`updateQueryString: used pushHistory with ${url.toString()}`)
+      } else console.error(`updateQueryString: cannot access history.pushState`)
     }
-
   },
   mounted() {
     this.updateIngredients(),
