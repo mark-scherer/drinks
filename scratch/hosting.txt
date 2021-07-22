@@ -64,3 +64,17 @@
 
 <- decision: DIGITAL OCEAN (for now)
     - want to try new cloud service
+
+# hosting extras
+1. CDN
+    - digital ocean product: spaces
+    - $5/month
+    - tried creating one, linking to droplet is a bit involved
+    - shelving this for now
+2. firewall
+    - keeping default firewall: all traffic allowed on :22 (ssh), :442 (http), :443 (https)
+3. https certificate
+    - this digital ocean article explains it well: https://www.digitalocean.com/community/tutorials/how-to-set-up-nginx-with-http-2-support-on-ubuntu-16-04
+    - need domain name first
+4. analytics
+    - setup google analytics 
