@@ -2,6 +2,7 @@ const path = require('path')
 const Koa = require('koa')
 const Router = require('@koa/router')
 const static = require('koa-static')
+const compress = require('koa-compress')
 
 const utils = require('../utils/utils')
 const config = utils.config(require('../configs/public.json'), require('../configs/private.json'))
@@ -23,7 +24,8 @@ app
     ctx.set('Access-Control-Allow-Origin', '*')
     await next()
   })
-  .use(static(path.join(__dirname, '../../', config.DIST)))
+  .use(static(path.join(__dirname, '../../', config.DIST), {gzip: true}))
+  .use(compress())
   .on('error', err => {
     console.error(`server error: ${err}`)
   })
