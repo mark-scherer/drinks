@@ -1,0 +1,66 @@
+##### hosting scratch #####
+
+1. need hosting service
+    - preliminary options
+        - digital ocean
+        - aws
+        - heroku
+        - netlify
+
+2. security?
+
+3. keep postgres in AWS or migrate to new hosting service?
+4. how to enabke analytics
+5. how to enable logging
+6. CDN?
+
+### hosting service ###
+1. Digital Ocean
+    - droplet === VM
+    - 'basic droplet': shared CPU
+        - 'bursty apps'
+        - low traffic web servers
+        - starting at $5/month
+            - 'premium' guaranteed to use 'one of latest 2 generations of CPUs' & NVMe SSDs, 'enhanced memory performance'
+        - from 1vCPU/1GB mem to 8 vCPU/16GB mem
+    - recommend scaling via benchmarking, provide tools
+    - provides scaling tools:
+        - spaces: CDN
+        - load balancer: distribute traffic between 3 droplets
+        - firewall
+        - backups
+        - managed DBs
+    - managed DBs
+        - start at $15/month
+        - includes postgres
+        - free daily backups
+
+2. AWS
+    - aws hosting solutions
+        - amplify: single page apps built on frameworks like vue
+            <- think this only allows serverless apps
+        - lightsail: low traffic, frequent changes, unlikely to scale past 5 servers, self-managed DNS, networking, server
+            <- seems to allow node backend
+        - s3: serverless static sites with occasional high traffic, infrequent changes
+        - ec2: multiple servers across 2+ data centers, high CPU use, load balancing, etc
+    - lightsail
+        - tools
+            - CDN
+            - load balancers
+            - DNS maangement
+    - pricing
+        - virtual server
+            - $3.50/month : 1 CPU, 512 MB mem, 20 GB SSD
+            - $5/month    : 1 CPU, 1 GB mem, 40 GB SSD
+            - $10/month   : 2 CPU, 1 GB mem, 60 GB SSD
+        - container
+            - $7/month    : 0.25 vCPU, 512 MB mem
+            - $10/month   : 0.25 vCPU, 1 GB mem
+        - managed DB
+            - $15/month: standard
+        - CDN
+            - $10/month (1st year free)
+        - load balancer: $18/month
+
+<- decision: DIGITAL OCEAN (for now)
+    - want to try new cloud service

@@ -45,7 +45,7 @@ import DrinkList from './components/DrinkList.vue'
 import Autocomplete from './components/Autocomplete.vue'
 import Switch from './components/Switch.vue'
 
-const SERVER_URL = 'http://localhost:8000'
+const SERVER_URL = `http://${window.location.hostname}`
 const DRINK_COUNT = 3
 
 // fetches ingredients from api
