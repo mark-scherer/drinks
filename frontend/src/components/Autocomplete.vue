@@ -23,7 +23,7 @@
           <span>{{selection.category ==='group' ? `${selection.name} (${selection.children.length})` : selection.name}}</span>
           
           <img class="icon selection-x-icon" src="https://img.icons8.com/ios/50/000000/multiply.png"
-            @click="clickChoiceX(index)"
+            @click="removeChoice(index)"
           />
         </div>
 
@@ -34,15 +34,15 @@
         </div>
       </div>
 
-      <input id="input" class="form-control" type="text" v-model="currentTyping" :placeholder="placeholder"
-        @keydown.enter = 'enter'
+      <input :id="inputId || 'autocomplete-input'" class="form-control" type="text" v-model="currentTyping" :placeholder="placeholder"
+        @keydown.enter = 'enterKey'
         @keydown.delete = 'popModelValue'
-        @keydown.down = 'down'
-        @keydown.up = 'up'
-        @input = 'change'
+        @keydown.down = 'downArrow'
+        @keydown.up = 'upArrow'
+        @input = 'changedTyping'
       />
       <img class="icon input-x" src="https://img.icons8.com/ios/50/000000/multiply.png" :class="{hide: !showClearInput}"
-        @click="clickInputX(index)"
+        @click="clearChoices(index)"
       />
 
     </div>
@@ -51,6 +51,7 @@
       <table :class="{hide: !showChoices}">
         <tbody>
           <tr v-for="(suggestion, index) in matches" :key="suggestion" class="dropdown-choice" :class="[ isActive(index) ? 'active-choice': '', suggestion.category_class ]"
+            @mouseover="setActiveSuggestion(index)"
             @click="clickSuggestion(index)"
           >
             <td class="suggestion-category">
@@ -100,6 +101,10 @@ export default {
     placeholder: {
       type: String,
       default: 'default'
+    },
+    inputId: {
+      type: String,
+      description: 'id for input component allowing programtic selection from parent components'
     }
   },
   emits: ['update:modelValue'],
@@ -173,11 +178,14 @@ export default {
   },
   methods: {
     
+    /* inputs handlers */
+
     // add this.matches[this.currentIndex] to modelValue after enter clicked
-    enter() {
+    enterKey() {
       if (this.showChoices) {
         this.$emit('update:modelValue', this.modelValue.concat([this.matches[this.currentIndex]]))
         this.currentTyping = ''
+        this.clampCurrentIndex()
       }
     },
 
@@ -188,48 +196,63 @@ export default {
       if (this.currentTyping === '') this.$emit('update:modelValue', copy)
     },
 
-    up() {
+    upArrow() {
       if (this.currentIndex > 0) this.currentIndex--
     },
-    down() {
+    downArrow() {
       if (this.currentIndex < this.matches.length - 1) this.currentIndex++
     },
-    isActive(index) {
-      return index === this.currentIndex
+
+    setActiveSuggestion(index) {
+      console.log(`setActiveSuggestion! ${index}`)
+      this.currentIndex = index
     },
-    change() {
+
+    // add this.matches[index] to modelValue after clicked
+    clickSuggestion(index) {
+      this.$emit('update:modelValue', this.modelValue.concat([this.matches[index]]))
+      this.currentTyping = ''
+      this.clampCurrentIndex()
+      this.focusInput()
+    },
+
+    // remove element at index from modelValue after its X clicked
+    removeChoice(index) {
+      const copy = _.cloneDeep(this.modelValue)
+      copy.splice(index, 1)
+      this.$emit('update:modelValue', copy)
+      this.currentTyping = ''
+    },
+
+    // clear modelValue after selection X clicked
+    clearChoices() {
+      this.$emit('update:modelValue', [])
+      this.currentTyping = ''
+      this.focusInput()
+    },
+
+    changedTyping() {
       if (this.open === false) {
         this.open = true
         this.currentIndex = 0
       }
     },
 
-    // add this.matches[index] to modelValue after clicked
-    clickSuggestion(index) {
-      this.$emit('update:modelValue', this.modelValue.concat([this.matches[index]]))
-      this.focusInput()
+    /* state methods */ 
+    isActive(index) {
+      return index === this.currentIndex
     },
 
-    // remove element at index from modelValue after its X clicked
-    clickChoiceX(index) {
-      const copy = _.cloneDeep(this.modelValue)
-      copy.splice(index, 1)
-      this.$emit('update:modelValue', copy)
-    },
-
-    // clear modelValue after selection X clicked
-    clickInputX() {
-      this.$emit('update:modelValue', [])
-      this.currentTyping = ''
-      this.focusInput()
-    },
-
+    /* helper methods */
     focusInput() {
-      document.getElementById('input').focus()
+      document.getElementById(this.inputId).focus()
     },
     clampCurrentIndex(matchesLength) {
-      this.currentIndex = _.clamp(this.currentIndex, matchesLength - 1)
+      this.currentIndex = _.clamp(this.currentIndex, 0, matchesLength - 1)
     },
+  },
+  mounted() {
+    this.focusInput()
   }
 }
 </script>
@@ -247,6 +270,7 @@ export default {
     max-width: 1000px;
     margin: 10px auto 0px auto;
     overflow: hidden;
+    cursor: pointer;
   }
   .suggestion-category {
     white-space: nowrap;

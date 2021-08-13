@@ -4,24 +4,28 @@
       <h1>Let's find new drinks</h1>
     </div>
     <div class="drinks-input">
-      <div class="must-include-selector">
-        <h1 class="select-label">Ingredients you want</h1>
-        <Autocomplete v-model="must_include_ingredients" 
-          :choices="ingredients" 
-          :placeholder="'Optional! Each drink will include all of these'"
-        />
-      </div>
-      <div class="preferred-ingredients-selector">
-        <h1 class="select-label">Ingredients you have</h1>
-        <Autocomplete v-model="preferred_ingredients" 
-          :choices="ingredients"
-          :placeholder="preferredIngredientsPlaceholder"
-        />
-        <div class="preferred-only-switch">
-          <h2 class="switch-label">Use only these ingredients?</h2>
-          <Switch v-model="only_preferred_ingredients"/>
-        </div>
-      </div>
+
+      <CollapsableInput v-model:selection="must_include_ingredients" v-model:expanded="expandedSelector.mustIncludeIngredients"
+        @update:expanded="handleCollaspables('mustIncludeIngredients', $event)"
+        :choices="ingredients" 
+        :expandedLabel="'Pick ingredients you want'" 
+        :sublabel="'Every drink will include ALL of these'"
+        :collapsedLabel="'OR pick ingredients you want'"
+        :placeholder="'Try \'whiskey\' or \'egg whites\''"
+        :inputId="'must-include-input'"
+      />
+
+      <CollapsableInput v-model:selection="preferred_ingredients" v-model:expanded="expandedSelector.preferredIngredients"
+        @update:expanded="handleCollaspables('preferredIngredients', $event)"
+        :choices="ingredients" 
+        :expandedLabel="'Pick ingredients you have'" 
+        :sublabel="'Every drink will use JUST these ingredients'"
+        :collapsedLabel="'OR pick ingredients you have'"
+        :placeholder="'Try \'whiskey\' or \'egg whites\''"
+        :inputId="'preferred-input'"
+
+      />
+      
       <div class='drink-buttons'>
         <div class="get-drinks">
           <button
@@ -29,6 +33,7 @@
           >{{updateDrinksButton}}</button>
         </div>
       </div>
+
     </div>
     <DrinkList :drinks="drinks" :totalDrinksCount="total_drinks_count" :loading="loading" :drinksLoaded="drinks_loaded" :showCountMsg="show_count_msg" :excluded_drinks="excluded_drinks"
       @replaceDrink="replaceDrink"
@@ -42,10 +47,12 @@ const _ = require('lodash')
 import { desanitize, sanitize } from './utils'
 
 import DrinkList from './components/DrinkList.vue'
-import Autocomplete from './components/Autocomplete.vue'
-import Switch from './components/Switch.vue'
+import CollapsableInput from './components/CollapsableInput.vue'
+// import Autocomplete from './components/Autocomplete.vue'
+// import Switch from './components/Switch.vue'
 
-const SERVER_URL = `http://${window.location.hostname}`
+// for dev, need to specify the port... dev server doesn't use express
+const SERVER_URL = process.env.NODE_ENV === 'development' ? `http://${window.location.hostname}:8000`: `http://${window.location.hostname}`
 const DRINK_COUNT = 3
 
 // fetches ingredients from api
@@ -133,8 +140,9 @@ export default {
   name: 'App',
   components: {
     DrinkList,
-    Autocomplete,
-    Switch
+    CollapsableInput,
+    // Autocomplete,
+    // Switch
   },
   data() {
     return {
@@ -150,6 +158,10 @@ export default {
       excluded_drinks: [],
 
       /* page lifecycle state */
+      expandedSelector: {
+        mustIncludeIngredients: true,
+        preferredIngredients: false
+      },
       loading: false,
       drinks_loaded: false,
       show_count_msg: true
@@ -233,6 +245,11 @@ export default {
         window.history.pushState({path: url.toString()}, '', url.toString())
         console.log(`updateQueryString: used pushHistory with ${url.toString()}`)
       } else console.error(`updateQueryString: cannot access history.pushState`)
+    },
+    handleCollaspables(selector, nowExpanded) {
+      const otherSelector = selector === 'mustIncludeIngredients' ? 'preferredIngredients' : 'mustIncludeIngredients'
+      if (!nowExpanded) this.expandedSelector[otherSelector] = true // collapsing, open other selector
+      else this.expandedSelector[otherSelector] = false // expanding, close other selector
     }
   },
   mounted() {
