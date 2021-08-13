@@ -5,6 +5,8 @@ const config = utils.config(require('../configs/public.json'), require('../confi
 
 const get_drinks_info = async function(drinks) {
   await utils.pg.connect(config.pg_config)
+
+  drinks = drinks.slice(0, config.drinks.MAX_DRINKS)
   const drinks_info = await utils.pg.query(`
     select 
       drinks.*,

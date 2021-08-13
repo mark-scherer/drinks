@@ -1,4 +1,11 @@
 {
-  "PORT": 8000,
-  "DIST": "frontend/dist/"
+  "server": {
+    "PORT": 8000
+  },
+  "frontend": {
+    "DIST": "frontend/dist/"
+  },
+  "drinks": {
+    "MAX_DRINKS": 3
+  }
 }

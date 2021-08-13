@@ -39,6 +39,8 @@ const POSTGRES_CONCURRENCY = 4
 const recommend_drinks = async function({n, must_include_ingredients, preferred_ingredients, only_preferred_ingredients, alcoholic_drinks, current_drinks, excluded_drinks}) {
   console.log(`recs.recommend_drinks: recieved request: ${JSON.stringify({ n, must_include_ingredients, preferred_ingredients, only_preferred_ingredients, alcoholic_drinks, current_drinks, excluded_drinks })}`)
 
+  n = _.clamp(n || config.drinks.MAX_DRINKS, 0, config.drinks.MAX_DRINKS)
+
   let new_drinks = [], drink_count, continue_loop = true
   while (new_drinks.length < n && continue_loop) {
     const rec_info = await _recommend_drink({

@@ -24,11 +24,11 @@ app
     ctx.set('Access-Control-Allow-Origin', '*')
     await next()
   })
-  .use(static(path.join(__dirname, '../../', config.DIST), {gzip: true}))
+  .use(static(path.join(__dirname, '../../', config.frontend.DIST), {gzip: true}))
   .use(compress())
   .on('error', err => {
     console.error(`server error: ${err}`)
   })
 
-app.listen(config.PORT)
-console.log(`server started on port ${config.PORT}`)
+app.listen(config.server.PORT)
+console.log(`server started on port ${config.server.PORT}`)

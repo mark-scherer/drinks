@@ -53,7 +53,6 @@ import CollapsableInput from './components/CollapsableInput.vue'
 
 // for dev, need to specify the port... dev server doesn't use express
 const SERVER_URL = process.env.NODE_ENV === 'development' ? `http://${window.location.hostname}:8000`: `http://${window.location.hostname}`
-const DRINK_COUNT = 3
 
 // fetches ingredients from api
 const fetchIngredients = function() {
@@ -192,7 +191,7 @@ export default {
       this.excluded_drinks = []
       this.drinks = []
       this.loading = true
-      fetchDrinkRecs(DRINK_COUNT, this.must_include_ingredients, this.preferred_ingredients, this.only_preferred_ingredients, this.excluded_drinks)
+      fetchDrinkRecs(null, this.must_include_ingredients, this.preferred_ingredients, this.only_preferred_ingredients, this.excluded_drinks)
         .then(drinks_response => {
           this.drinks = drinks_response.drinks
           this.total_drinks_count = drinks_response.drink_count
