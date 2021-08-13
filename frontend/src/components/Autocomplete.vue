@@ -31,7 +31,7 @@
         </div>
       </div>
 
-      <input :id="inputId || 'autocomplete-input'" class="form-control" type="text" v-model="currentTyping" :placeholder="placeholder"
+      <input :id="inputId" class="form-control" type="text" v-model="currentTyping" :placeholder="placeholder"
         @keydown.enter = 'enterKey'
         @keydown.delete = 'popModelValue'
         @keydown.down = 'downArrow'
@@ -105,6 +105,7 @@ export default {
     },
     inputId: {
       type: String,
+      default: 'autocomplete-input',
       description: 'id for input component'
     }
   },
