@@ -15,7 +15,7 @@
 
     <div class="collapsable-body" v-if="expanded">
       <div class="collapsable-sublabel">{{sublabel}}</div>
-      <Autocomplete ref="autocomplete" v-model="acSelection" 
+      <Autocomplete ref="autocomplete" v-model:selection="acSelection" 
         :inputId="inputId"
         :choices="choices" 
         :placeholder="placeholder"

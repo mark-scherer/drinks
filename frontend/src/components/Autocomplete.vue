@@ -1,11 +1,8 @@
 <!-- Autocomplete: custom auto-complete selector -->
-<!-- modelValue is two-way bound to caller's input to v-model -->
-  <!-- 'modelValue' name forced by vue 3: https://v3.vuejs.org/guide/forms.html#basic-usage -->
 
 <!-- 
   TO DO: 
     - update display of selected-choice cards for groups
-    - update modelValue output when groups selected
 -->
 
 <template>
@@ -13,22 +10,22 @@
 
     <div class='input-wrapper'>
       
-      <div v-for="(selection, index) in modelValue" :key="selection.name" :class="['selected-choice', selection.category_class, selection.expanded ? 'expanded' : '']">
+      <div v-for="(selectedItem, index) in selection" :key="selectedItem.name" :class="['selected-choice', selectedItem.category_class, selectedItem.expanded ? 'expanded' : '']">
         <div class="selected-choice-details">
-          <img v-if="selection.category ==='group'" :src="selection.expanded ? 'https://img.icons8.com/ios-glyphs/50/000000/collapse-arrow.png' : 'https://img.icons8.com/ios-glyphs/50/000000/expand-arrow.png'"
+          <img v-if="selectedItem.category ==='group'" :src="selectedItem.expanded ? 'https://img.icons8.com/ios-glyphs/50/000000/collapse-arrow.png' : 'https://img.icons8.com/ios-glyphs/50/000000/expand-arrow.png'"
             class="icon group-icon"
-            @click="() => selection.expanded = !selection.expanded"
+            @click="() => selectedItem.expanded = !selectedItem.expanded"
           />
           
-          <span>{{selection.category ==='group' ? `${selection.name} (${selection.children.length})` : selection.name}}</span>
+          <span>{{selectedItem.category ==='group' ? `${selectedItem.name} (${selectedItem.children.length})` : selectedItem.name}}</span>
           
           <img class="icon selection-x-icon" src="https://img.icons8.com/ios/50/000000/multiply.png"
             @click="removeChoice(index)"
           />
         </div>
 
-        <div :class="['selection-group-children', selection.expanded ? '' : 'hide']">
-          <div v-for="(child) in selection.children" :key="child.name" :class="['selection-group-child', child.category_class]">
+        <div :class="['selection-group-children', selectedItem.expanded ? '' : 'hide']">
+          <div v-for="(child) in selectedItem.children" :key="child.name" :class="['selection-group-child', child.category_class]">
             {{child.name}}
           </div>
         </div>
@@ -88,26 +85,30 @@ export default {
   props: {
     choices: {
       type: Array,
-      required: true
+      required: true,
+      description: 'list of choices available for selection'
     },
-    maxMatches: {
-      type: Number,
-      default: 10
-    },
-    modelValue: {
+    selection: {
       type: Array,
       required: true,
+      description: 'tow-way bound list of selected items'
     },
     placeholder: {
       type: String,
-      default: 'default'
+      default: 'default',
+      description: 'input element placeholder'
+    },
+    maxMatches: {
+      type: Number,
+      default: 10,
+      description: 'max number of matches shown in dropdown at once'
     },
     inputId: {
       type: String,
-      description: 'id for input component allowing programtic selection from parent components'
+      description: 'id for input component'
     }
   },
-  emits: ['update:modelValue'],
+  emits: ['update:selection'],
   data() {
     return {
       open: false,
@@ -132,9 +133,9 @@ export default {
         // TO DO: also search description, including default description for groups
           // ex: 'bourbon' should produce 'whiskey' family as a choice
         const typingStartIndex = choice.name.indexOf(this.currentTyping)
-        const allIncludedNames = _.flatten(_.map(this.modelValue, selection => {
-          if (selection.category === 'group') return [selection.name, ..._.map(selection.children, 'name')]
-          else return selection.name
+        const allIncludedNames = _.flatten(_.map(this.selection, selectedItem => {
+          if (selectedItem.category === 'group') return [selectedItem.name, ..._.map(selectedItem.children, 'name')]
+          else return selectedItem.name
         }))
 
         if (typingStartIndex > -1 && !allIncludedNames.includes(choice.name)) {
@@ -173,27 +174,27 @@ export default {
       return this.currentTyping !== "" && this.matches.length > 0 && this.open === true
     },
     showClearInput() {
-      return this.currentTyping !== "" || this.modelValue.length > 0
+      return this.currentTyping !== "" || this.selection.length > 0
     }
   },
   methods: {
     
     /* inputs handlers */
 
-    // add this.matches[this.currentIndex] to modelValue after enter clicked
+    // add this.matches[this.currentIndex] to selection after enter clicked
     enterKey() {
       if (this.showChoices) {
-        this.$emit('update:modelValue', this.modelValue.concat([this.matches[this.currentIndex]]))
+        this.$emit('update:selection', this.selection.concat([this.matches[this.currentIndex]]))
         this.currentTyping = ''
         this.clampCurrentIndex()
       }
     },
 
-    // pop last value off modelValue after backspace typed
+    // pop last value off selection after backspace typed
     popModelValue() {
-      const copy = _.cloneDeep(this.modelValue)
+      const copy = _.cloneDeep(this.selection)
       copy.pop()
-      if (this.currentTyping === '') this.$emit('update:modelValue', copy)
+      if (this.currentTyping === '') this.$emit('update:selection', copy)
     },
 
     upArrow() {
@@ -208,25 +209,25 @@ export default {
       this.currentIndex = index
     },
 
-    // add this.matches[index] to modelValue after clicked
+    // add this.matches[index] to selection after clicked
     clickSuggestion(index) {
-      this.$emit('update:modelValue', this.modelValue.concat([this.matches[index]]))
+      this.$emit('update:selection', this.selection.concat([this.matches[index]]))
       this.currentTyping = ''
       this.clampCurrentIndex()
       this.focusInput()
     },
 
-    // remove element at index from modelValue after its X clicked
+    // remove element at index from selection after its X clicked
     removeChoice(index) {
-      const copy = _.cloneDeep(this.modelValue)
+      const copy = _.cloneDeep(this.selection)
       copy.splice(index, 1)
-      this.$emit('update:modelValue', copy)
+      this.$emit('update:selection', copy)
       this.currentTyping = ''
     },
 
-    // clear modelValue after selection X clicked
+    // clear selection after selection X clicked
     clearChoices() {
-      this.$emit('update:modelValue', [])
+      this.$emit('update:selection', [])
       this.currentTyping = ''
       this.focusInput()
     },
