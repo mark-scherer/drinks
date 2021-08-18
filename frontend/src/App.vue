@@ -8,10 +8,11 @@
       <CollapsableInput v-model:selection="must_include_ingredients" v-model:expanded="expandedSelector.mustIncludeIngredients"
         @update:expanded="handleCollaspables('mustIncludeIngredients', $event)"
         :choices="ingredients" 
+        :preselects="preselects"
         :expandedLabel="'Pick ingredients you want'" 
         :sublabel="'Every drink will include ALL of these'"
         :collapsedLabel="'OR pick ingredients you want'"
-        :placeholder="'Try \'whiskey\' or \'egg whites\''"
+        :placeholder="'Type to see ingredients...'"
         :inputId="'must-include-input'"
       />
 
@@ -48,11 +49,15 @@ import { desanitize, sanitize } from './utils'
 
 import DrinkList from './components/DrinkList.vue'
 import CollapsableInput from './components/CollapsableInput.vue'
-// import Autocomplete from './components/Autocomplete.vue'
-// import Switch from './components/Switch.vue'
 
 // for dev, need to specify the port... dev server doesn't use express
 const SERVER_URL = process.env.NODE_ENV === 'development' ? `http://${window.location.hostname}:8000`: `http://${window.location.hostname}`
+
+// put in a config?
+const MIN_PRESELECTS = 3
+const MAX_PRESELECTS = 5
+const MIN_PRESELECT_GROUP_SIZE = 1
+const MAX_PRESELECT_GROUP_SIZE = 1
 
 // fetches ingredients from api
 const fetchIngredients = function() {
@@ -176,6 +181,21 @@ export default {
       return this.drinks_loaded ?
         'Get new drinks' :
         'Get drinks'
+    },
+    preselects() {
+      const numPreselects = _.random(MIN_PRESELECTS, MAX_PRESELECTS)
+      const shuffled = _.shuffle(this.ingredients)
+      let currentIndex = 0
+      let preselects = []
+      
+      for (let i = 0; i < numPreselects; i++) {
+        const groupSize = _.random(MIN_PRESELECT_GROUP_SIZE, MAX_PRESELECT_GROUP_SIZE)
+        if (currentIndex + groupSize >= shuffled.length) break
+
+        preselects.push(shuffled.slice(currentIndex, currentIndex + groupSize))
+        currentIndex += groupSize
+      }
+      return preselects
     }
   },
   methods: {
@@ -273,11 +293,14 @@ export default {
     height: 1.75em;
     cursor: pointer;
   }
+  .icon-big {
+    height: 4em;
+  }
   .icon-small {
     height: 1.25em;
   }
-  .icon-big {
-    height: 4em;
+  .icon-x-small {
+    height: 1em;
   }
   .hide {
     display: none !important;

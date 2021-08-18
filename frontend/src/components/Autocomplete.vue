@@ -8,9 +8,24 @@
 <template>
   <div class="autocomplete" >
 
+    <!-- preselects -->
+    <div class="preselects-container" v-if="preselects.length > 0">
+      <div>Try:</div>
+      <div class="preselect" v-for="(ps, index) in preselects" :key="ps.map(choice => choice.name)"
+        @click="selectPreselect(index)"
+      >
+        <div class="preselect-label">{{ps.map(choice => choice.name).join(', ')}}</div>
+        <!-- <img class="icon-x-small group-icon" :src="'https://img.icons8.com/ios/50/000000/plus-math.png'"/> -->
+      </div>
+    </div>
+
+    <!-- input box -->
     <div class='input-wrapper'>
       
+      <!-- cards of selected choices -->
       <div v-for="(selectedItem, index) in selection" :key="selectedItem.name" :class="['selected-choice', selectedItem.category_class, selectedItem.expanded ? 'expanded' : '']">
+        
+        <!-- single selected element card -->
         <div class="selected-choice-details">
           <img v-if="selectedItem.category ==='group'" :src="selectedItem.expanded ? 'https://img.icons8.com/ios-glyphs/50/000000/collapse-arrow.png' : 'https://img.icons8.com/ios-glyphs/50/000000/expand-arrow.png'"
             class="icon group-icon"
@@ -24,6 +39,7 @@
           />
         </div>
 
+        <!-- children of selected group -->
         <div :class="['selection-group-children', selectedItem.expanded ? '' : 'hide']">
           <div v-for="(child) in selectedItem.children" :key="child.name" :class="['selection-group-child', child.category_class]">
             {{child.name}}
@@ -31,6 +47,7 @@
         </div>
       </div>
 
+      <!-- input element -->
       <input :id="inputId" class="form-control" type="text" v-model="currentTyping" :placeholder="placeholder"
         @keydown.enter = 'enterKey'
         @keydown.delete = 'popModelValue'
@@ -44,6 +61,7 @@
 
     </div>
 
+    <!-- suggestion dropdown -->
     <div class="dropdown-choice-list">
       <table :class="{hide: !showChoices}">
         <tbody>
@@ -95,8 +113,13 @@ export default {
     },
     placeholder: {
       type: String,
-      default: 'default',
+      default: '',
       description: 'input element placeholder'
+    },
+    preselects: {
+      type: Array,
+      default: [],
+      description: 'nested list of choices to provide as selectable cards'
     },
     maxMatches: {
       type: Number,
@@ -181,6 +204,12 @@ export default {
   methods: {
     
     /* inputs handlers */
+    selectPreselect(index) {
+      const selectedPreselect = this.preselects[index]
+      const currentChoices = _.map(this.selection, 'name')
+      const choicesToAdd = _.filter(selectedPreselect, choice => !currentChoices.includes(choice.name))
+      this.$emit('update:selection', this.selection.concat(choicesToAdd))
+    },
 
     // add this.matches[this.currentIndex] to selection after enter clicked
     enterKey() {
@@ -263,6 +292,28 @@ export default {
   .autocomplete {
     position: relative;
   }
+
+  /* preselects */
+  .preselects-container {
+    display: flex;
+    align-items: center;
+    margin-top: 15px;
+    margin-bottom: 10px;
+    font-size: larger;
+  }
+  .preselect {
+    margin: 0 15px;
+    padding: 4px 4px 4px 15px;
+    background: lightgray;
+    border-radius: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+  }
+  .preselect-label {
+    margin-right: 10px;
+  }
+
   ul {
     width: 100%;
     padding-left: 0px;

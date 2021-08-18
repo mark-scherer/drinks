@@ -18,6 +18,7 @@
       <Autocomplete ref="autocomplete" v-model:selection="acSelection" 
         :inputId="inputId"
         :choices="choices" 
+        :preselects="preselects"
         :placeholder="placeholder"
       />
     </div>
@@ -43,6 +44,10 @@ export default {
       type: Array,
       required: true,
       description: 'list of values to include in autocomplete dropdown'
+    },
+    preselects: {
+      type: Array,
+      description: 'nested list of choices to provide as selectable cards'
     },
 
     /* rendering inputs */
