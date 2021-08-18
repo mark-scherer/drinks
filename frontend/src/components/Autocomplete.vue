@@ -118,7 +118,7 @@ export default {
     },
     preselects: {
       type: Array,
-      default: [],
+      default: () => [],
       description: 'nested list of choices to provide as selectable cards'
     },
     maxMatches: {
