@@ -279,7 +279,15 @@ export default {
 
 </script>
 
-<style>
+<style lang="scss">
+  $color-primary: red;
+
+  /* just a demo that sass works */
+  $color-primary: red;
+  h1 {
+    color: $color-primary;
+  }
+
   #app {
     font-family: Avenir, Helvetica, Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
