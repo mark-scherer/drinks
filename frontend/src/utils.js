@@ -16,6 +16,8 @@ const sanitize = function(text) {
   return text
     .toLowerCase()
     .replace(/ /g, '_')
+    .replace(/\//g, '_')
+    .replace(/_{2,}/g, '_')
 }
 
 export {

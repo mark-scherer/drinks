@@ -11,7 +11,7 @@
     <!-- preselects -->
     <div class="preselects-container" v-if="preselects.length > 0">
       <div>Try:</div>
-      <div class="preselect" v-for="(ps, index) in preselects" :key="ps.map(choice => choice.name)"
+      <div class="preselect" :class="ps.map(choice => sanitizeClass(choice.category)).join(' ')" v-for="(ps, index) in preselects" :key="ps.map(choice => choice.name)"
         @click="selectPreselect(index)"
       >
         <div class="preselect-label">{{ps.map(choice => choice.name).join(', ')}}</div>
@@ -23,7 +23,7 @@
     <div class='input-wrapper'>
       
       <!-- cards of selected choices -->
-      <div v-for="(selectedItem, index) in selection" :key="selectedItem.name" :class="['selected-choice', selectedItem.category_class, selectedItem.expanded ? 'expanded' : '']">
+      <div v-for="(selectedItem, index) in selection" :key="selectedItem.name" :class="['selected-choice', selectedItem.expanded ? 'expanded' : '']">
         
         <!-- single selected element card -->
         <div class="selected-choice-details">
@@ -94,10 +94,6 @@
 const _ = require('lodash')
 import { sanitize } from './../utils'
 
-const classFromCategory = (category) => {
-  return sanitize(category).replace(/_/g, '-')
-}
-
 export default {
   name: 'Autocomplete',
   props: {
@@ -166,12 +162,12 @@ export default {
           const typingEndIndex = typingStartIndex + this.currentTyping.length
           const matchScore = rankMatch(choice, typingStartIndex, typingEndIndex)
 
-          const category_class = classFromCategory(choice.category)
+          const category_class = this.sanitizeClass(choice.category)
           if (choice.category === 'group') {
             choice.children = _.map(choice.children, child => {
               return {
                 ...child,
-                category_class: classFromCategory(child.category)
+                category_class: this.sanitizeClass(child.category)
               }
             })
           }
@@ -281,6 +277,10 @@ export default {
     clampCurrentIndex(matchesLength) {
       this.currentIndex = _.clamp(this.currentIndex, 0, matchesLength - 1)
     },
+
+    sanitizeClass(input) {
+      return sanitize(input || '').replace(/_/g, '-')
+    }
   },
   mounted() {
     this.focusInput()

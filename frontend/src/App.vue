@@ -1,44 +1,51 @@
 <template>
   <div>
-    <div class="title">
-      <h1>Let's find new drinks</h1>
+    <!-- <link href='http://fonts.googleapis.com/css?family=Lato:400,700' rel='stylesheet' type='text/css'/> -->
+    <div class="navbar">
+      <div class="logo">SpinTheShaker</div>
     </div>
-    <div class="drinks-input">
 
-      <CollapsableInput v-model:selection="must_include_ingredients" v-model:expanded="expandedSelector.mustIncludeIngredients"
-        @update:expanded="handleCollaspables('mustIncludeIngredients', $event)"
-        :choices="ingredients" 
-        :preselects="preselects"
-        :expandedLabel="'Pick ingredients you want'" 
-        :sublabel="'Every drink will include ALL of these'"
-        :collapsedLabel="'OR pick ingredients you want'"
-        :placeholder="'Type to see ingredients...'"
-        :inputId="'must-include-input'"
-      />
-
-      <CollapsableInput v-model:selection="preferred_ingredients" v-model:expanded="expandedSelector.preferredIngredients"
-        @update:expanded="handleCollaspables('preferredIngredients', $event)"
-        :choices="ingredients" 
-        :expandedLabel="'Pick ingredients you have'" 
-        :sublabel="'Every drink will use JUST these ingredients'"
-        :collapsedLabel="'OR pick ingredients you have'"
-        :placeholder="'Try \'whiskey\' or \'egg whites\''"
-        :inputId="'preferred-input'"
-
-      />
-      
-      <div class='drink-buttons'>
-        <div class="get-drinks">
-          <button
-            @click = 'updateAllDrinks'
-          >{{updateDrinksButton}}</button>
-        </div>
+    <div class="page">
+      <div class="title">
+        <!-- <h1>Let's find new drinks</h1> -->
       </div>
+      <div class="drinks-input">
 
+        <CollapsableInput v-model:selection="must_include_ingredients" v-model:expanded="expandedSelector.mustIncludeIngredients"
+          @update:expanded="handleCollaspables('mustIncludeIngredients', $event)"
+          :choices="ingredients" 
+          :preselects="preselects"
+          :expandedLabel="'Pick ingredients you want'" 
+          :sublabel="'Every drink will include ALL of these'"
+          :collapsedLabel="'OR pick ingredients you want'"
+          :placeholder="'Type to see ingredients...'"
+          :inputId="'must-include-input'"
+        />
+
+        <CollapsableInput v-model:selection="preferred_ingredients" v-model:expanded="expandedSelector.preferredIngredients"
+          @update:expanded="handleCollaspables('preferredIngredients', $event)"
+          :choices="ingredients" 
+          :expandedLabel="'Pick ingredients you have'" 
+          :sublabel="'Every drink will use JUST these ingredients'"
+          :collapsedLabel="'OR pick ingredients you have'"
+          :placeholder="'Try \'whiskey\' or \'egg whites\''"
+          :inputId="'preferred-input'"
+
+        />
+        
+        <div class='drink-buttons'>
+          <div class="get-drinks">
+            <button
+              @click = 'updateAllDrinks'
+            >{{updateDrinksButton}}</button>
+          </div>
+        </div>
+
+      </div>
+      <DrinkList :drinks="drinks" :totalDrinksCount="total_drinks_count" :loading="loading" :drinksLoaded="drinks_loaded" :showCountMsg="show_count_msg" :excluded_drinks="excluded_drinks"
+        @replaceDrink="replaceDrink"
+      />
     </div>
-    <DrinkList :drinks="drinks" :totalDrinksCount="total_drinks_count" :loading="loading" :drinksLoaded="drinks_loaded" :showCountMsg="show_count_msg" :excluded_drinks="excluded_drinks"
-      @replaceDrink="replaceDrink"
-    />
   </div>
 </template>
 
@@ -280,23 +287,22 @@ export default {
 </script>
 
 <style lang="scss">
-  $color-primary: red;
-
-  /* just a demo that sass works */
-  $color-primary: red;
-  h1 {
-    color: $color-primary;
-  }
+  @import 'sass/_variables.scss';
+  // @import url('https://fonts.googleapis.com/css?family=Nunito');
+  @import url('https://fonts.googleapis.com/css?family=Open+Sans');
 
   #app {
-    font-family: Avenir, Helvetica, Arial, sans-serif;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+    // font-family: Nunito;
+    font-family: "Open sans";
+    // font-family: Muli;
     text-align: center;
-    color: #2c3e50;
-    margin: 60px auto 0px auto;
+    color: $color-dark-primary;
+  }
+  .page {
+    margin: 0 auto;
     max-width: 95%;
   }
+
   .icon {
     height: 1.75em;
     cursor: pointer;
@@ -312,6 +318,24 @@ export default {
   }
   .hide {
     display: none !important;
+  }
+
+  /* navbar */
+  .navbar {
+    // background: $color-dark-primary;
+    height: 60px;
+    margin: -8px 0 10px;
+    padding: 40px 40px 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .logo {
+    // color: white;
+    color: $color-dark-primary;
+    font-size: xx-large;
+    font-weight: 600;
+    font-family: "Playfair Display";
   }
 
   /* input section */
@@ -364,5 +388,37 @@ export default {
   }
   button:hover {
     background: #a3a3a3;
+  }
+
+  /* ingredient category styling */
+  .base-spirit {
+    background: $color-base-spirit !important;
+  }
+  .other-spirit {
+    background: $color-other-spirit !important;
+  }
+  .wine-beer {
+    background: $color-wine-beer !important;
+  }
+  .liqueur-cordial {
+    background: $color-liqueur-cordial !important;
+  }
+  .mixer {
+    background: $color-mixer !important;
+  }
+  .fruit-juice {
+    background: $color-fruit-juice !important;
+  }
+  .flavoring-syrup {
+    background: $color-flavoring-syrup !important;
+  }
+  .herb-spice {
+    background: $color-herb-spice !important;
+  }
+  .garnish {
+    background: $color-garnish !important;
+  }
+  .other-unknown {
+    background: $color-other-unknown !important;
   }
 </style>
