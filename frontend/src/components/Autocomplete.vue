@@ -9,43 +9,25 @@
   <div class="autocomplete" >
 
     <!-- preselects -->
-    <div class="preselects-container" v-if="preselects.length > 0">
+    <div class="preselects-container" v-if="preselectsData.length > 0">
       <div>Try:</div>
-      <div class="preselect" :class="ps.map(choice => sanitizeClass(choice.category)).join(' ')" v-for="(ps, index) in preselects" :key="ps.map(choice => choice.name)"
-        @click="selectPreselect(index)"
-      >
-        <div class="preselect-label">{{ps.map(choice => choice.name).join(', ')}}</div>
-        <!-- <img class="icon-x-small group-icon" :src="'https://img.icons8.com/ios/50/000000/plus-math.png'"/> -->
-      </div>
+      <IngredientCard v-for="(ingredientData, index) in preselectsData" :key="ingredientData.name" class="preselect-card"
+        :ingredientData="ingredientData"
+        :selectable="true"
+        :removeable="false"
+        @clicked="selectPreselect(index)"
+      />
     </div>
 
     <!-- input box -->
     <div class='input-wrapper'>
       
       <!-- cards of selected choices -->
-      <div v-for="(selectedItem, index) in selection" :key="selectedItem.name" :class="['selected-choice', selectedItem.expanded ? 'expanded' : '']">
-        
-        <!-- single selected element card -->
-        <div class="selected-choice-details">
-          <img v-if="selectedItem.category ==='group'" :src="selectedItem.expanded ? 'https://img.icons8.com/ios-glyphs/50/000000/collapse-arrow.png' : 'https://img.icons8.com/ios-glyphs/50/000000/expand-arrow.png'"
-            class="icon group-icon"
-            @click="() => selectedItem.expanded = !selectedItem.expanded"
-          />
-          
-          <span>{{selectedItem.category ==='group' ? `${selectedItem.name} (${selectedItem.children.length})` : selectedItem.name}}</span>
-          
-          <img class="icon selection-x-icon" src="https://img.icons8.com/ios/50/000000/multiply.png"
-            @click="removeChoice(index)"
-          />
-        </div>
-
-        <!-- children of selected group -->
-        <div :class="['selection-group-children', selectedItem.expanded ? '' : 'hide']">
-          <div v-for="(child) in selectedItem.children" :key="child.name" :class="['selection-group-child', child.category_class]">
-            {{child.name}}
-          </div>
-        </div>
-      </div>
+      <IngredientCard v-for="(selectedItem, index) in selection" :key="selectedItem.name"
+        :ingredientData="selectedItem"
+        :compact="true"
+        @remove="removeChoice(index)"
+      />
 
       <!-- input element -->
       <input :id="inputId" class="form-control" type="text" v-model="currentTyping" :placeholder="placeholder"
@@ -65,7 +47,7 @@
     <div class="dropdown-choice-list">
       <table :class="{hide: !showChoices}">
         <tbody>
-          <tr v-for="(suggestion, index) in matches" :key="suggestion" class="dropdown-choice" :class="[ isActive(index) ? 'active-choice': '', suggestion.category_class ]"
+          <tr v-for="(suggestion, index) in matches" :key="suggestion" class="dropdown-choice" :class="[ isActive(index) ? 'active-choice': '',  sanitizeClass(suggestion.category)]"
             @mouseover="setActiveSuggestion(index)"
             @click="clickSuggestion(index)"
           >
@@ -94,8 +76,13 @@
 const _ = require('lodash')
 const utils = require('../incl/utils')
 
+import IngredientCard from './IngredientCard.vue'
+
 export default {
   name: 'Autocomplete',
+  components: {
+    IngredientCard
+  },
   props: {
     choices: {
       type: Array,
@@ -112,7 +99,7 @@ export default {
       default: '',
       description: 'input element placeholder'
     },
-    preselects: {
+    preselectsData: {
       type: Array,
       default: () => [],
       description: 'nested list of choices to provide as selectable cards'
@@ -162,23 +149,12 @@ export default {
           const typingEndIndex = typingStartIndex + this.currentTyping.length
           const matchScore = rankMatch(choice, typingStartIndex, typingEndIndex)
 
-          const category_class = this.sanitizeClass(choice.category)
-          if (choice.category === 'group') {
-            choice.children = _.map(choice.children, child => {
-              return {
-                ...child,
-                category_class: this.sanitizeClass(child.category)
-              }
-            })
-          }
-
           const description = !choice.description && choice.category === 'group' ? 
             `<b>includes ${choice.children.length} choices:</b> ${_.map(choice.children, 'name').join(', ')}` : 
             choice.description
 
           matches.push({
             ...choice,
-            category_class,
             description,
             typingStartIndex,
             typingEndIndex,
@@ -201,10 +177,11 @@ export default {
     
     /* inputs handlers */
     selectPreselect(index) {
-      const selectedPreselect = this.preselects[index]
+      const selectedPreselect = this.preselectsData[index]
       const currentChoices = _.map(this.selection, 'name')
-      const choicesToAdd = _.filter(selectedPreselect, choice => !currentChoices.includes(choice.name))
-      this.$emit('update:selection', this.selection.concat(choicesToAdd))
+      if (!currentChoices.includes(selectedPreselect.name)) {
+        this.$emit('update:selection', this.selection.concat(this.preselectsData[index]))
+      }
     },
 
     // add this.matches[this.currentIndex] to selection after enter clicked
@@ -277,9 +254,8 @@ export default {
     clampCurrentIndex(matchesLength) {
       this.currentIndex = _.clamp(this.currentIndex, 0, matchesLength - 1)
     },
-
     sanitizeClass(input) {
-      return utils.sanitize(input || '').replace(/_/g, '-')
+      return utils.sanitizeClass(input)
     }
   },
   mounted() {
@@ -301,17 +277,8 @@ export default {
     margin-bottom: 10px;
     font-size: larger;
   }
-  .preselect {
-    margin: 0 15px;
-    padding: 4px 4px 4px 15px;
-    background: lightgray;
-    border-radius: 10px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-  }
-  .preselect-label {
-    margin-right: 10px;
+  .preselect-card {
+    margin: 0 25px 0 10px;
   }
 
   ul {
@@ -341,37 +308,9 @@ export default {
     text-align: start;
     font-size: small;
   }
-  .selected-choice {
-    margin: 2px;
-    background: #d3d3d3;
-    border-radius: 10px;
-    white-space: nowrap;
-    max-width: 49%;
-  }
-  .selected-choice-details {
-    display: flex;
-    align-items: center;
-    margin: 0 4px 0 10px;
-    justify-content: space-between;
-  }
-  .group-icon {
-    margin: 0 5px 0 -5px;
-  }
-  .selection-x-icon {
-    margin-left: 5px;
-  }
+
   .input-x {
     float: right
-  }
-  .selection-group-children {
-    background: #ffffff;
-    margin: 5px;
-    border-radius: 5px;
-    display: flex;
-    flex-wrap: wrap;
-  }
-  .selection-group-child {
-    margin: 0 5px;
   }
 
   .highlighted-text {

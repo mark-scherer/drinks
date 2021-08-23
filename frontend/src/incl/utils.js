@@ -2,7 +2,7 @@
   Frontend utils
 */
 
-const desanitize = function(text, options={}) {
+const desanitize = (text, options={}) => {
   let result = text
     .replace(/_/g, ' ')
 
@@ -12,7 +12,7 @@ const desanitize = function(text, options={}) {
   return result
 }
 
-const sanitize = function(text) {
+const sanitize = (text) => {
   return text
     .toLowerCase()
     .replace(/ /g, '_')
@@ -20,8 +20,13 @@ const sanitize = function(text) {
     .replace(/_{2,}/g, '_')
 }
 
+const sanitizeClass = (input) => {
+  return sanitize(input || '').replace(/_/g, '-')
+}
+
 export {
   desanitize,
-  sanitize
+  sanitize,
+  sanitizeClass
 }
 

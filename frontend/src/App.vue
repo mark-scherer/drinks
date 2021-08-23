@@ -190,19 +190,7 @@ export default {
         'Get drinks'
     },
     preselects() {
-      const numPreselects = _.random(config.MIN_PRESELECTS, config.MAX_PRESELECTS)
-      const shuffled = _.shuffle(this.ingredients)
-      let currentIndex = 0
-      let preselects = []
-      
-      for (let i = 0; i < numPreselects; i++) {
-        const groupSize = _.random(config.MIN_PRESELECT_GROUP_SIZE, config.MAX_PRESELECT_GROUP_SIZE)
-        if (currentIndex + groupSize >= shuffled.length) break
-
-        preselects.push(shuffled.slice(currentIndex, currentIndex + groupSize))
-        currentIndex += groupSize
-      }
-      return preselects
+      return _.shuffle(this.ingredients).slice(0, _.random(config.MIN_PRESELECTS, config.MAX_PRESELECTS))
     }
   },
   methods: {
@@ -385,6 +373,9 @@ export default {
   }
   .other-unknown {
     background: $color-other-unknown !important;
+  }
+  .group {
+    background: $color-group !important;
   }
 
   /* misc other app-wide styling */
