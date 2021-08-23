@@ -1,6 +1,5 @@
 <!-- DrinkInfo: basic overview of single drink -->
-  <!-- modelValue is two-way bound to caller's input to v-model -->
-  <!-- modelValue used to control if full drink details are expanded or collapsed -->
+  <!-- expanded: two-way bound var controlling if DrinkInfo is collapsed or expanded -->
 
 <template>
   <div class="drink-info">
@@ -12,7 +11,7 @@
       </div>
 
       <!-- drink-summary when drink collapsed -->
-      <div class="drink-summary" :class="{hide: modelValue}">
+      <div class="drink-summary" :class="{hide: expanded}">
         <div class = "ingredients-summary">
           <p
             v-html="ingredients_summary(sortIngredients(drink_info.ingredient_info))"
@@ -25,7 +24,7 @@
       </div>
 
       <!-- drink-detail when drink expanded --> 
-      <div class="drink-details" :class="{hide: !modelValue}">
+      <div class="drink-details" :class="{hide: !expanded}">
         <div class="drink-metadata-details">
           <div v-if="drink_info.category"><span><b>Category:</b> {{desanitize(drink_info.category)}}</span></div>
           <div v-if="drink_info.glass"><span><b>Glass:</b> {{desanitize(drink_info.glass)}}</span></div>
@@ -49,7 +48,7 @@
 
       </div>
       
-      <img :src="modelValue ? 'https://img.icons8.com/ios-glyphs/50/000000/collapse-arrow.png' : 'https://img.icons8.com/ios-glyphs/50/000000/expand-arrow.png'"
+      <img :src="expanded ? 'https://img.icons8.com/ios-glyphs/50/000000/collapse-arrow.png' : 'https://img.icons8.com/ios-glyphs/50/000000/expand-arrow.png'"
         class="icon group-icon"
         @click="toggle"
       />
@@ -58,25 +57,23 @@
 
 <script>
 const _ = require('lodash')
-import * as utils from '../utils.js'
+const utils = require('../incl/utils')
 
 export default {
   name: 'DrinkInfo',
   props: {
     drink_info: Object,
-
-    // modelValue is two-way version of 'expanded' bool
-    modelValue: {
+    expanded: {
       type: Boolean,
       required: true,
     }
   },
-  emits: ['update:modelValue', 'replaceDrink'],
+  emits: ['update:expanded', 'replaceDrink'],
   methods: {
     desanitize: utils.desanitize,
     toggle() {
-      console.log(`toggling DrinkInfo (${this.drink_info.drink}) to: ${!this.modelValue}`)
-      this.$emit('update:modelValue', !this.modelValue)
+      console.log(`toggling DrinkInfo (${this.drink_info.drink}) to: ${!this.expanded}`)
+      this.$emit('update:expanded', !this.expanded)
     },
     sortIngredients(ingredient_info) {
       return _.sortBy(ingredient_info, info => {

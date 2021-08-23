@@ -19,7 +19,7 @@
 </template>
 
 <script>
-import * as utils from '../utils.js'
+const utils = require('../incl/utils')
 
 export default {
   name: 'IngredientSummary',

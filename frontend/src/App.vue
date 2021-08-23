@@ -1,14 +1,14 @@
 <template>
   <div>
-    <!-- <link href='http://fonts.googleapis.com/css?family=Lato:400,700' rel='stylesheet' type='text/css'/> -->
+    
+    <!-- navbar -->
     <div class="navbar">
       <div class="logo">SpinTheShaker</div>
     </div>
 
     <div class="page">
-      <div class="title">
-        <!-- <h1>Let's find new drinks</h1> -->
-      </div>
+
+      <!-- input section -->
       <div class="drinks-input">
 
         <CollapsableInput v-model:selection="must_include_ingredients" v-model:expanded="expandedSelector.mustIncludeIngredients"
@@ -30,21 +30,26 @@
           :collapsedLabel="'OR pick ingredients you have'"
           :placeholder="'Try \'whiskey\' or \'egg whites\''"
           :inputId="'preferred-input'"
-
         />
         
         <div class='drink-buttons'>
           <div class="get-drinks">
-            <button
-              @click = 'updateAllDrinks'
-            >{{updateDrinksButton}}</button>
+            <button @click = 'updateAllDrinks'>{{updateDrinksButton}}</button>
           </div>
         </div>
-
       </div>
-      <DrinkList :drinks="drinks" :totalDrinksCount="total_drinks_count" :loading="loading" :drinksLoaded="drinks_loaded" :showCountMsg="show_count_msg" :excluded_drinks="excluded_drinks"
+
+      <!-- list of drinks  -->
+      <DrinkList 
+        :drinks="drinks" 
+        :totalDrinksCount="total_drinks_count" 
+        :loading="loading" 
+        :drinksLoaded="drinks_loaded" 
+        :showCountMsg="show_count_msg" 
+        :excluded_drinks="excluded_drinks"
         @replaceDrink="replaceDrink"
       />
+
     </div>
   </div>
 </template>
@@ -52,19 +57,14 @@
 <script>
 const qs = require('qs')
 const _ = require('lodash')
-import { desanitize, sanitize } from './utils'
+const utils = require('./incl/utils')
+const config = require('./incl/config')
 
 import DrinkList from './components/DrinkList.vue'
 import CollapsableInput from './components/CollapsableInput.vue'
 
 // for dev, need to specify the port... dev server doesn't use express
 const SERVER_URL = process.env.NODE_ENV === 'development' ? `http://${window.location.hostname}:8000`: `http://${window.location.hostname}`
-
-// put in a config?
-const MIN_PRESELECTS = 3
-const MAX_PRESELECTS = 5
-const MIN_PRESELECT_GROUP_SIZE = 1
-const MAX_PRESELECT_GROUP_SIZE = 1
 
 // fetches ingredients from api
 const fetchIngredients = function() {
@@ -81,16 +81,16 @@ const fetchIngredients = function() {
           const individual_ingredients = _.map(parsed_response.ingredients, ingredient_info => {
             return {
               ...ingredient_info,
-              name: desanitize(ingredient_info.ingredient),
-              category: desanitize(ingredient_info.category)
+              name: utils.desanitize(ingredient_info.ingredient),
+              category: utils.desanitize(ingredient_info.category)
             }
           })
 
           // expand ingredient families & format as autocomplete choices
           const families = _.map(parsed_response.families, (regex, parent) => {
             return {
-              children: _.sortBy(_.filter(individual_ingredients, ingredient_info => RegExp(regex).test(ingredient_info.ingredient)), child => desanitize(child.name)),
-              name: desanitize(parent),
+              children: _.sortBy(_.filter(individual_ingredients, ingredient_info => RegExp(regex).test(ingredient_info.ingredient)), child => utils.desanitize(child.name)),
+              name: utils.desanitize(parent),
               category: 'group'
             }
           })
@@ -105,13 +105,13 @@ const fetchDrinkRecs = function(n, _must_include_ingredients, _preferred_ingredi
   const url = new URL(`${SERVER_URL}/drinks/recs`)
   const must_include_ingredients = _.map(_must_include_ingredients, ingredient => {
     return ingredient.category === 'group' ?
-      _.map(ingredient.children, child => sanitize(child.name)) :
-      [ sanitize(ingredient.name) ]
+      _.map(ingredient.children, child => utils.sanitize(child.name)) :
+      [ utils.sanitize(ingredient.name) ]
   })
   const preferred_ingredients = _.map(_preferred_ingredients, ingredient => {
     return ingredient.category === 'group' ?
-      _.map(ingredient.children, child => sanitize(child.name)) :
-      [ sanitize(ingredient.name) ]
+      _.map(ingredient.children, child => utils.sanitize(child.name)) :
+      [ utils.sanitize(ingredient.name) ]
   })
   const params = {
     n,
@@ -190,13 +190,13 @@ export default {
         'Get drinks'
     },
     preselects() {
-      const numPreselects = _.random(MIN_PRESELECTS, MAX_PRESELECTS)
+      const numPreselects = _.random(config.MIN_PRESELECTS, config.MAX_PRESELECTS)
       const shuffled = _.shuffle(this.ingredients)
       let currentIndex = 0
       let preselects = []
       
       for (let i = 0; i < numPreselects; i++) {
-        const groupSize = _.random(MIN_PRESELECT_GROUP_SIZE, MAX_PRESELECT_GROUP_SIZE)
+        const groupSize = _.random(config.MIN_PRESELECT_GROUP_SIZE, config.MAX_PRESELECT_GROUP_SIZE)
         if (currentIndex + groupSize >= shuffled.length) break
 
         preselects.push(shuffled.slice(currentIndex, currentIndex + groupSize))
@@ -287,22 +287,16 @@ export default {
 </script>
 
 <style lang="scss">
-  @import 'sass/_variables.scss';
-  // @import url('https://fonts.googleapis.com/css?family=Nunito');
+  @import 'incl/_variables.scss';
   @import url('https://fonts.googleapis.com/css?family=Open+Sans');
 
-  #app {
-    // font-family: Nunito;
-    font-family: "Open sans";
-    // font-family: Muli;
-    text-align: center;
-    color: $color-dark-primary;
-  }
+  /* app-wide formatting */
   .page {
     margin: 0 auto;
     max-width: 95%;
   }
 
+  /* icon styling */
   .icon {
     height: 1.75em;
     cursor: pointer;
@@ -316,13 +310,9 @@ export default {
   .icon-x-small {
     height: 1em;
   }
-  .hide {
-    display: none !important;
-  }
 
   /* navbar */
   .navbar {
-    // background: $color-dark-primary;
     height: 60px;
     margin: -8px 0 10px;
     padding: 40px 40px 10px;
@@ -331,7 +321,6 @@ export default {
     align-items: center;
   }
   .logo {
-    // color: white;
     color: $color-dark-primary;
     font-size: xx-large;
     font-weight: 600;
@@ -343,27 +332,7 @@ export default {
     margin-bottom: 20px;
   }
 
-  /* input fields */
-  .select-label {
-    font-size: 1.25em;
-    text-align: start;
-  }
-  .preferred-only-switch {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .switch-label {
-    font-size: 1em;
-    display: inline-block;
-  }
-
-  /* styling of specific drink categories */
-  .dropdown-choice.group .suggestion-category {
-    font-weight: bolder;
-  }
-
-  /* input buttons */
+  /* input button styling */
   .drink-buttons {
     display: flex;
     justify-content: center;
@@ -371,10 +340,6 @@ export default {
   }
   .drink-buttons * {
     margin: 0 10px;
-  }
-  .share-drinks button {
-    display: flex;
-    padding-right: 10px;
   }
   button {
     font: inherit;
@@ -420,5 +385,18 @@ export default {
   }
   .other-unknown {
     background: $color-other-unknown !important;
+  }
+
+  /* misc other app-wide styling */
+  #app {
+    font-family: "Open sans";
+    text-align: center;
+    color: $color-dark-primary;
+  }
+  .mod {
+    color: red;
+  }
+  .hide {
+    display: none !important;
   }
 </style>

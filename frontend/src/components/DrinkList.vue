@@ -5,7 +5,7 @@
     <table class="drink-table">
       <tbody>
         <tr v-for="(drink, index) in drinks" v-bind:key="drink.drink">
-          <DrinkInfo v-bind:drink_info="drink" v-model="drink.expanded"
+          <DrinkInfo v-bind:drink_info="drink" v-model:expanded="drink.expanded"
             @replaceDrink="replaceDrink(index)"
           />
         </tr>
@@ -18,7 +18,8 @@
       <img class="icon icon-big" src="../assets/dots-loading.gif"/>
     </div>
     
-    <div class="ingredient-list">
+    <!-- if ingredient list is brought back, should move to app-level component -->
+    <!-- <div class="ingredient-list">
       <h1 v-if="all_ingredients.length > 0">Ingredients</h1>
       <table class="ingredient-table">
         <tbody>
@@ -27,14 +28,14 @@
           </tr>
         </tbody>
       </table>
-    </div>
+    </div> -->
   </div>
 </template>
 
 <script>
-import { desanitize } from '../utils'
+const utils = require('../incl/utils')
 import DrinkInfo from './DrinkInfo.vue'
-import IngredientSummary from './IngredientSummary.vue'
+// import IngredientSummary from './IngredientSummary.vue'
 const _ = require('lodash')
 
 const MAX_DISPLAYED_DRINK_COUNT = 100
@@ -52,7 +53,7 @@ export default {
   emits: ['replaceDrink'],
   components: {
     DrinkInfo,
-    IngredientSummary
+    // IngredientSummary
   },
   data() {
     return {
@@ -91,9 +92,9 @@ export default {
           .map(drink => drink.ingredient_info)
           .flatten()
           .map(ingredient_info => {
-            const premods_str = _.map(ingredient_info.premods, mod => desanitize(mod)).join(' ')
-            const postmods_str = _.map(ingredient_info.postmods, mod => desanitize(mod)).join(' ')
-            const ingredient_str = desanitize(ingredient_info.ingredient)
+            const premods_str = _.map(ingredient_info.premods, mod => utils.desanitize(mod)).join(' ')
+            const postmods_str = _.map(ingredient_info.postmods, mod => utils.desanitize(mod)).join(' ')
+            const ingredient_str = utils.desanitize(ingredient_info.ingredient)
             return {
               premods_str,
               postmods_str,
@@ -121,22 +122,12 @@ export default {
     margin: 0px auto;
     max-width: 600px;
   }
-  .drink-tail {
-    margin-bottom: 20px;
-    font-size: larger;
-  }
-  .ingredient-list h1 {
-    font-size: x-large;
-    margin-bottom: 10px;
-  }
   table {
     display: inline-table;
     width: 100%
   }
-</style>
-
-<style>
-  .mod {
-    color: red;
+  .drink-tail {
+    margin-bottom: 20px;
+    font-size: larger;
   }
 </style>

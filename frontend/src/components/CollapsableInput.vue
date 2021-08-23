@@ -4,9 +4,6 @@
   <div class="collapsable-input">
     <div class="collapsable-header" :class="{expanded, collapsed: !expanded}" @click="toggleExpanded">
       <div class="collapsable-label">{{expanded ? expandedLabel : collapsedLabel}}</div>
-      <!-- <img class="icon group-icon"
-        :src="expanded ? 'https://img.icons8.com/ios-glyphs/50/000000/collapse-arrow.png' : 'https://img.icons8.com/ios-glyphs/50/000000/expand-arrow.png'"
-      /> -->
       <img class="icon-small group-icon"
         v-if="!expanded"
         :src="'https://img.icons8.com/ios/50/000000/forward--v1.png'"
@@ -116,6 +113,7 @@ export default {
   border-bottom-left-radius: 0;
   border-bottom: 0;
 }
+
 .collapsable-header {
   display: flex;
   justify-content: left;
@@ -131,6 +129,7 @@ export default {
   color: gray;
   margin-bottom: 0;
 }
+
 .collapsable-label {
   font-size: 1.25em;
   font-weight: 500;

@@ -92,7 +92,7 @@
 
 <script>
 const _ = require('lodash')
-import { sanitize } from './../utils'
+const utils = require('../incl/utils')
 
 export default {
   name: 'Autocomplete',
@@ -279,7 +279,7 @@ export default {
     },
 
     sanitizeClass(input) {
-      return sanitize(input || '').replace(/_/g, '-')
+      return utils.sanitize(input || '').replace(/_/g, '-')
     }
   },
   mounted() {
@@ -324,6 +324,9 @@ export default {
     margin: 10px auto 0px auto;
     overflow: hidden;
     cursor: pointer;
+  }
+  .dropdown-choice.group .suggestion-category {
+    font-weight: bolder;
   }
   .suggestion-category {
     white-space: nowrap;
