@@ -101,16 +101,8 @@ export default {
 .collapsable-input {
   border: 1px solid gray;
   padding: 15px;
-  
-  /* because last-of-type does not work with classes, must style as last of type then override first-of-type */
-  border-bottom-right-radius: 15px;
-  border-bottom-left-radius: 15px;
 }
 .collapsable-input:first-of-type {
-  border-top-right-radius: 15px;
-  border-top-left-radius: 15px;
-  border-bottom-right-radius: 0;
-  border-bottom-left-radius: 0;
   border-bottom: 0;
 }
 

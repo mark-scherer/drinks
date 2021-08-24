@@ -15,7 +15,9 @@
         :ingredientData="ingredientData"
         :selectable="true"
         :removeable="false"
+        :descriptionOpen="preselectDescriptionsOpen[index]"
         @clicked="selectPreselect(index)"
+        @update:descriptionOpen="handlePreselectDescriptionUpdate($event, index)"
       />
     </div>
 
@@ -26,7 +28,9 @@
       <IngredientCard v-for="(selectedItem, index) in selection" :key="selectedItem.name"
         :ingredientData="selectedItem"
         :compact="true"
+        :descriptionOpen="selectionDescriptionsOpen[index]"
         @remove="removeChoice(index)"
+        @update:descriptionOpen="handleSelectionDescriptionUpdate($event, index)"
       />
 
       <!-- input element -->
@@ -47,12 +51,12 @@
     <div class="dropdown-choice-list">
       <table :class="{hide: !showChoices}">
         <tbody>
-          <tr v-for="(suggestion, index) in matches" :key="suggestion" class="dropdown-choice" :class="[ isActive(index) ? 'active-choice': '',  sanitizeClass(suggestion.category)]"
+          <tr v-for="(suggestion, index) in matches" :key="suggestion" class="dropdown-choice" :class="[ isActive(index) ? 'active-choice': '']"
             @mouseover="setActiveSuggestion(index)"
             @click="clickSuggestion(index)"
           >
-            <td class="suggestion-category">
-              {{ suggestion.category }}:
+            <td class="suggestion-category" :class="sanitizeClass(suggestion.category)">
+              {{ suggestion.category }}
             </td>
             <td class="suggestion-name" :class="{  }">
               <a href='#'>
@@ -120,7 +124,17 @@ export default {
     return {
       open: false,
       currentIndex: 0,
-      currentTyping: ''
+      currentTyping: '',
+      preselectDescriptionsOpen: [],
+      selectionDescriptionsOpen: []
+    }
+  },
+  watch: {
+    preselectsData(val) {
+      this.preselectDescriptionsOpen = Array(val.length).fill(false)
+    },
+    selection(val) {
+      this.selectionDescriptionsOpen = Array(val.length).fill(false)
     }
   },
   computed: {
@@ -182,6 +196,35 @@ export default {
       if (!currentChoices.includes(selectedPreselect.name)) {
         this.$emit('update:selection', this.selection.concat(this.preselectsData[index]))
       }
+    },
+    handlePreselectDescriptionUpdate(status, index) {
+      console.log(`handlePreselectDescriptionUpdate: ${status}, ${index}`)
+      if (status) {
+        // close all other preselect descriptions
+        _.forEach(_.range(this.preselectDescriptionsOpen.length), i => {
+          if (i === index) this.preselectDescriptionsOpen[i] = true
+          else this.preselectDescriptionsOpen[i] = false
+        })
+
+        // close all selection descriptions
+        _.forEach(_.range(this.selectionDescriptionsOpen.length), i => {
+          this.selectionDescriptionsOpen[i] = false
+        })
+      } else this.preselectDescriptionsOpen[index] = false
+    },
+    handleSelectionDescriptionUpdate(status, index) {
+      if (status) {
+        // close all other selection descriptions
+        _.forEach(_.range(this.selectionDescriptionsOpen.length), i => {
+          if (i === index) this.selectionDescriptionsOpen[i] = true
+          else this.selectionDescriptionsOpen[i] = false
+        })
+
+        // close all preselect descriptions
+        _.forEach(_.range(this.preselectDescriptionsOpen.length), i => {
+          this.preselectDescriptionsOpen[i] = false
+        })
+      } else this.selectionDescriptionsOpen[index] = false
     },
 
     // add this.matches[this.currentIndex] to selection after enter clicked
@@ -264,7 +307,7 @@ export default {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
   .autocomplete {
     position: relative;
   }
@@ -276,6 +319,7 @@ export default {
     margin-top: 15px;
     margin-bottom: 10px;
     font-size: larger;
+    position: relative;
   }
   .preselect-card {
     margin: 0 25px 0 10px;
@@ -314,11 +358,10 @@ export default {
   }
 
   .highlighted-text {
-    background: #fcf9c2;
+    background: rgb(#fcf9c2, 0.5);
   }
   .active-choice {
     background: #f0f0f0;
-    border-radius: 5px;
     padding: 0 10px;
     margin: 0 -10px;
   }
@@ -327,8 +370,8 @@ export default {
     color: inherit;
   }
   .input-wrapper {
+    position: relative;
     border: 1px solid gray;
-    border-radius: 10px;
     display: flex;
     flex-wrap: wrap;
     padding: 5px;

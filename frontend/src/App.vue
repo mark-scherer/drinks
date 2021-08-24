@@ -334,7 +334,6 @@ export default {
     font-size: 1.25em;
     padding: 10px 40px;
     border: none;
-    border-radius: 10px;
     cursor: pointer;
     background: #d1cfcf;
     outline: none;

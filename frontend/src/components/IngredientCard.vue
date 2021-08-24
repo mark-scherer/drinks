@@ -2,24 +2,43 @@
   ingredientData interface:
     - category: unchecked ingredient category, 'group' treated specially
     - name: desanitized ingredient name
+    - description: ingredient description
     - children: list of ingredient children, same requirements as upper-level ingredients (only required if category === 'group')
 -->
 
 <template>
+  <div class="ingredient-card-container">
+    <!-- description content, usually hidden -->
+    <div class="description-container">
+      <div v-if="descriptionOpen" class="ingredient-card-description">
+        <div>{{ingredientData.description}}</div>
+        <img class="icon x-icon" src="https://img.icons8.com/ios/50/000000/multiply.png" @click="handleDescription(true)"/>
+      </div>
+    </div>
+    
     <div class="ingredient-card" :class="cardStyling" @click="handleClick()">
     
       <!-- single selected element card -->
       <div class="card-header" :class="{'card-header-compact': compact}">
-        <img v-if="ingredientData.category ==='group'" :src="expanded ? 'https://img.icons8.com/ios-glyphs/50/000000/collapse-arrow.png' : 'https://img.icons8.com/ios-glyphs/50/000000/expand-arrow.png'"
-          class="icon group-card-icon"
-          @click="() => expanded = !expanded"
-        />
+        <!-- left aligned content -->
+        <div class="card-header-content">
+          <img v-if="ingredientData.category ==='group'" :src="expanded ? 'https://img.icons8.com/ios-glyphs/50/000000/collapse-arrow.png' : 'https://img.icons8.com/ios-glyphs/50/000000/expand-arrow.png'"
+            class="icon icon-small group-card-icon"
+            @click="() => expanded = !expanded"
+          />
+          
+          <span>{{ingredientData.category ==='group' ? `${ingredientData.name} (${ingredientData.children.length})` : ingredientData.name}}</span>
+        </div>
         
-        <span>{{ingredientData.category ==='group' ? `${ingredientData.name} (${ingredientData.children.length})` : ingredientData.name}}</span>
-        
-        <img v-if="removeable" class="icon card-x-icon" src="https://img.icons8.com/ios/50/000000/multiply.png"
-          @click="removeSelf()"
-        />
+        <!-- right aligned content -->
+        <div class="card-header-content">
+          <!-- <img v-if="ingredientData.description" class="icon icon-small info-icon" src="https://img.icons8.com/ios/50/000000/help.png"
+            @click.stop="handleDescription()"
+          /> -->
+          <img v-if="removeable" class="icon x-icon" src="https://img.icons8.com/ios/50/000000/multiply.png"
+            @click="removeSelf()"
+          />
+        </div>
       </div>
 
       <!-- expanded card: children of a group -->
@@ -31,6 +50,7 @@
       </div>
     
     </div>
+  </div>
  
 </template>
 
@@ -40,7 +60,7 @@ const utils = require('../incl/utils')
 
 export default {
   name: 'IngredientCard',
-  emits: ['clicked', 'removed'],
+  emits: ['clicked', 'removed', 'update:descriptionOpen'],
   props: {
     ingredientData: {
       type: Object,
@@ -70,6 +90,12 @@ export default {
       type: Boolean,
       default: false,
       description: 'reduce size of card'
+    },
+    descriptionOpen: {
+      type: Boolean,
+      default: false,
+      required: true,
+      description: 'two-way bound control over if description popup is open'
     }
   },
   data() {
@@ -87,27 +113,32 @@ export default {
     }
   }, 
   methods: {
+    // disabled because can't find a good way to format descriptions
+    // handleDescription(closed) {
+    //   let newDesriptionOpened
+    //   if (closed) newDesriptionOpened = false
+    //   else newDesriptionOpened = !this.descriptionOpen
+    //   this.$emit('update:descriptionOpen', newDesriptionOpened)
+    // },
     handleClick() {
       console.log(`clicked: ${this.ingredientData.name}`)
       this.$emit('clicked')
     },
     removeSelf() {
       this.$emit('remove')
-    },
-    // sanitizeClass(input) {
-    //   return utils.sanitizeClass(input)
-    // }
+    }
   }
 }
 </script>
 
 <style scoped>
+.ingredient-card-container {
+  max-width: 49%;
+}
 .ingredient-card {
   margin: 2px;
   background: #d3d3d3;
-  border-radius: 10px;
   white-space: nowrap;
-  max-width: 49%;
 }
 .selectable-card {
   cursor: pointer
@@ -121,13 +152,16 @@ export default {
   padding: 2px 5px;
 }
 .card-header-compact {
-  padding: 0
+  padding: 0 0 0 5px;
+}
+.card-header-content {
+  display: flex;
+  align-items: center;
 }
 
 .card-body {
   background: #ffffff;
   margin: 5px;
-  border-radius: 5px;
   display: flex;
   flex-wrap: wrap;
 }
@@ -136,12 +170,33 @@ export default {
   padding: 2px 5px;
 }
 
+.description-container {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ingredient-card-description {
+  max-height: 40px;
+  text-align: left;
+  background: lightgray;
+  padding: 5px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
 /* card icons */
 .group-card-icon {
   margin: 0 5px 0 0;
 }
-.card-x-icon {
-  margin-left: 5px;
-  padding: 2px;
+.info-icon {
+  margin: 0 -4px 0 10px;
+}
+.x-icon {
+  margin: 0 -4px 0 4px;
 }
 </style>
