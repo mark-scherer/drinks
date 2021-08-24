@@ -9,11 +9,9 @@
 <template>
   <div class="ingredient-card-container">
     <!-- description content, usually hidden -->
-    <div class="description-container">
-      <div v-if="descriptionOpen" class="ingredient-card-description">
-        <div>{{ingredientData.description}}</div>
-        <img class="icon x-icon" src="https://img.icons8.com/ios/50/000000/multiply.png" @click="handleDescription(true)"/>
-      </div>
+    <div v-if="descriptionOpen" class="ingredient-card-description">
+      <div>{{ingredientData.description}}</div>
+      <img class="icon x-icon" src="https://img.icons8.com/ios/50/000000/multiply.png" @click="handleDescription(true)"/>
     </div>
     
     <div class="ingredient-card" :class="cardStyling" @click="handleClick()">
@@ -32,9 +30,9 @@
         
         <!-- right aligned content -->
         <div class="card-header-content">
-          <!-- <img v-if="ingredientData.description" class="icon icon-small info-icon" src="https://img.icons8.com/ios/50/000000/help.png"
+          <img v-if="ingredientData.description" class="icon icon-small info-icon" src="https://img.icons8.com/ios/50/000000/help.png"
             @click.stop="handleDescription()"
-          /> -->
+          />
           <img v-if="removeable" class="icon x-icon" src="https://img.icons8.com/ios/50/000000/multiply.png"
             @click="removeSelf()"
           />
@@ -57,6 +55,8 @@
 <script>
 const _ = require('lodash')
 const utils = require('../incl/utils')
+
+const MARGIN = '2px'
 
 export default {
   name: 'IngredientCard',
@@ -100,7 +100,8 @@ export default {
   },
   data() {
     return {
-      expanded: false
+      expanded: false,
+      margin: MARGIN
     }
   },
   computed: {
@@ -114,12 +115,12 @@ export default {
   }, 
   methods: {
     // disabled because can't find a good way to format descriptions
-    // handleDescription(closed) {
-    //   let newDesriptionOpened
-    //   if (closed) newDesriptionOpened = false
-    //   else newDesriptionOpened = !this.descriptionOpen
-    //   this.$emit('update:descriptionOpen', newDesriptionOpened)
-    // },
+    handleDescription(closed) {
+      let newDesriptionOpened
+      if (closed) newDesriptionOpened = false
+      else newDesriptionOpened = !this.descriptionOpen
+      this.$emit('update:descriptionOpen', newDesriptionOpened)
+    },
     handleClick() {
       console.log(`clicked: ${this.ingredientData.name}`)
       this.$emit('clicked')
@@ -127,6 +128,9 @@ export default {
     removeSelf() {
       this.$emit('remove')
     }
+  },
+  mounted() {
+    console.log(this.margin)
   }
 }
 </script>
@@ -170,17 +174,12 @@ export default {
   padding: 2px 5px;
 }
 
-.description-container {
+.ingredient-card-description {
   position: absolute;
   bottom: 100%;
-  left: 0;
-  right: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.ingredient-card-description {
-  max-height: 40px;
+  left: 7px; /* container padding plus element margin */
+  max-height: 150px;
+  overflow: scroll;
   text-align: left;
   background: lightgray;
   padding: 5px;

@@ -308,9 +308,9 @@ export default {
 </script>
 
 <style scoped lang="scss">
-  .autocomplete {
-    position: relative;
-  }
+  // .autocomplete {
+  //   position: relative;
+  // }
 
   /* preselects */
   .preselects-container {
