@@ -3,7 +3,7 @@
 <template>
   <div class="collapsable-input">
     <div class="collapsable-header" :class="{expanded, collapsed: !expanded}" @click="toggleExpanded">
-      <div class="collapsable-label">{{expanded ? expandedLabel : collapsedLabel}}</div>
+      <div class="collapsable-label heading-font">{{expanded ? expandedLabel : collapsedLabel}}</div>
       <img class="icon-small group-icon"
         v-if="!expanded"
         :src="'https://img.icons8.com/ios/50/000000/forward--v1.png'"
@@ -11,7 +11,7 @@
     </div>
 
     <div class="collapsable-body" v-if="expanded">
-      <div class="collapsable-sublabel">{{sublabel}}</div>
+      <div class="collapsable-sublabel heading-font" >{{sublabel}}</div>
       <Autocomplete ref="autocomplete" v-model:selection="acSelection" 
         :inputId="inputId"
         :choices="choices" 
@@ -123,7 +123,7 @@ export default {
 }
 
 .collapsable-label {
-  font-size: 1.25em;
+  font-size: larger;
   font-weight: 500;
   text-align: start;
   margin-right: 10px;

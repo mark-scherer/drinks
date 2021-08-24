@@ -4,7 +4,7 @@
 <template>
   <div class="drink-info">
       <div class="drink-banner">
-        <h1>{{desanitize(drink_info.drink, {capitalize: true})}}</h1>
+        <h1 class="heading-font">{{desanitize(drink_info.drink, {capitalize: true})}}</h1>
         <img class="icon icon-small" src="https://img.icons8.com/ios/50/000000/data-in-both-directions.png"
           @click="replaceDrink"
         />
@@ -125,6 +125,7 @@ export default {
   h1 {
     text-align: left;
     margin-bottom: 10px;
+    font-weight: 500;
   }
 
   /* when collapsed */

@@ -10,7 +10,7 @@
 
     <!-- preselects -->
     <div class="preselect-row" v-if="preselectsData.length > 0">
-      <div>Try:</div>
+      <!-- <div class="heading-font">Try:</div> -->
       <div class="preselect-container">
         <IngredientCard v-for="(ingredientData, index) in preselectsData" :key="ingredientData.name" class="preselect-card"
           :ingredientData="ingredientData"
@@ -322,7 +322,7 @@ export default {
     flex-grow: 2;
     display: flex;
     align-items: center;
-    justify-content: space-around;
+    justify-content: center;
     flex-wrap: wrap;
   }
 

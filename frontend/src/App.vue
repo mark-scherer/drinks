@@ -6,7 +6,7 @@
     <!-- navbar -->
       <!-- inside page so logo and page contents aligned -->
     <div class="navbar">
-      <div class="logo">SpinTheShaker</div>
+      <div class="logo heading-font">SpinTheShaker</div>
     </div>
 
       <!-- input section -->
@@ -33,7 +33,7 @@
           :inputId="'preferred-input'"
         />
         
-        <div class='drink-buttons'>
+        <div class="drink-buttons">
           <div class="get-drinks">
             <button @click = 'updateAllDrinks'>{{updateDrinksButton}}</button>
           </div>
@@ -312,7 +312,6 @@ export default {
     color: $color-dark-primary;
     font-size: xx-large;
     font-weight: 600;
-    font-family: "Playfair Display";
   }
 
   /* input section */
@@ -382,6 +381,9 @@ export default {
     font-family: "Open sans";
     text-align: center;
     color: $color-dark-primary;
+  }
+  .heading-font {
+    font-family: "Playfair Display";
   }
   .mod {
     color: red;
