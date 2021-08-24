@@ -303,8 +303,7 @@ export default {
   /* navbar */
   .navbar {
     height: 60px;
-    margin: -8px 0 10px;
-    padding: 40px 40px 10px;
+    padding: 40px 0 10px;
     display: flex;
     justify-content: space-between;
     align-items: center;
