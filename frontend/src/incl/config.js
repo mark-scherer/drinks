@@ -5,7 +5,7 @@
 module.exports = {
 
   /* preselect controls */
-  MIN_PRESELECTS: 8,
-  MAX_PRESELECTS: 8
+  MIN_PRESELECTS: 5,
+  MAX_PRESELECTS: 5
   
 }

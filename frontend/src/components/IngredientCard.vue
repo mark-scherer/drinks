@@ -136,9 +136,9 @@ export default {
 </script>
 
 <style scoped>
-.ingredient-card-container {
+/* .ingredient-card-container {
   max-width: 49%;
-}
+} */
 .ingredient-card {
   margin: 2px;
   background: #d3d3d3;

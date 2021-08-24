@@ -9,16 +9,18 @@
   <div class="autocomplete" >
 
     <!-- preselects -->
-    <div class="preselects-container" v-if="preselectsData.length > 0">
+    <div class="preselect-row" v-if="preselectsData.length > 0">
       <div>Try:</div>
-      <IngredientCard v-for="(ingredientData, index) in preselectsData" :key="ingredientData.name" class="preselect-card"
-        :ingredientData="ingredientData"
-        :selectable="true"
-        :removeable="false"
-        :descriptionOpen="preselectDescriptionsOpen[index]"
-        @clicked="selectPreselect(index)"
-        @update:descriptionOpen="handlePreselectDescriptionUpdate($event, index)"
-      />
+      <div class="preselect-container">
+        <IngredientCard v-for="(ingredientData, index) in preselectsData" :key="ingredientData.name" class="preselect-card"
+          :ingredientData="ingredientData"
+          :selectable="true"
+          :removeable="false"
+          :descriptionOpen="preselectDescriptionsOpen[index]"
+          @clicked="selectPreselect(index)"
+          @update:descriptionOpen="handlePreselectDescriptionUpdate($event, index)"
+        />
+      </div>
     </div>
 
     <!-- input box -->
@@ -308,21 +310,20 @@ export default {
 </script>
 
 <style scoped lang="scss">
-  // .autocomplete {
-  //   position: relative;
-  // }
-
   /* preselects */
-  .preselects-container {
-    display: flex;
-    align-items: center;
+  .preselect-row {
     margin-top: 15px;
     margin-bottom: 10px;
     font-size: larger;
     position: relative;
+    display: flex;
   }
-  .preselect-card {
-    margin: 0 25px 0 10px;
+  .preselect-container {
+    flex-grow: 2;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    flex-wrap: wrap;
   }
 
   ul {

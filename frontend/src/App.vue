@@ -18,7 +18,7 @@
           :expandedLabel="'Pick ingredients you want'" 
           :sublabel="'Every drink will include ALL of these'"
           :collapsedLabel="'OR pick ingredients you want'"
-          :placeholder="'Type to see ingredients...'"
+          :placeholder="'Type to see more ingredients...'"
           :inputId="'must-include-input'"
         />
 
