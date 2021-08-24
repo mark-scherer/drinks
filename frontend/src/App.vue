@@ -1,12 +1,13 @@
 <template>
   <div>
-    
+
+    <div class="page">
+
     <!-- navbar -->
+      <!-- inside page so logo and page contents aligned -->
     <div class="navbar">
       <div class="logo">SpinTheShaker</div>
     </div>
-
-    <div class="page">
 
       <!-- input section -->
       <div class="drinks-input">
