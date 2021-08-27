@@ -1,21 +1,13 @@
 const path = require('path')
 const Koa = require('koa')
-const Router = require('@koa/router')
 const static = require('koa-static')
 const compress = require('koa-compress')
 
 const utils = require('../utils/utils')
 const config = utils.config(require('../configs/public.json'), require('../configs/private.json'))
-
-const drinks_api = require('./api/drinks')
-const ingredients_api = require('./api/ingredients')
+const router = require('api/router')
 
 const app = new Koa()
-const router = new Router()
-
-router.get('/drinks/recs', drinks_api.recs.get)
-router.get('/drinks/info', drinks_api.info.get)
-router.get('/ingredients', ingredients_api.get)
 
 app
   .use(router.routes())

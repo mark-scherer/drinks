@@ -20,7 +20,7 @@ const query_ingredients = async function() {
   INGREDIENTS = _.map(raw_ingredients, ingredient => _.omit(ingredient, ['source']))
 }
 
-module.exports.get = async function(ctx, next) {
+const get = async function(ctx, next) {
   const current = Date.now()
   if (current - LAST_REFRESH > REFRESH_PERIOD*1000) {
     await query_ingredients()
@@ -32,4 +32,8 @@ module.exports.get = async function(ctx, next) {
     families
   }
   await next()
+}
+
+module.exports = {
+  get
 }
