@@ -5,13 +5,12 @@ const compress = require('koa-compress')
 
 const utils = require('../utils/utils')
 const config = utils.config(require('../configs/public.json'), require('../configs/private.json'))
-const router = require('api/router')
+const router = require('./api/router')
 
 const app = new Koa()
 
 app
-  .use(router.routes())
-  .use(router.allowedMethods())
+  .use(router.routes(), router.allowedMethods())
   .use(async (ctx, next) => {     /* for dev only */
     ctx.set('Access-Control-Allow-Origin', '*')
     await next()

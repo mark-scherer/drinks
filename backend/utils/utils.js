@@ -1,7 +1,57 @@
-const { resolve } = require('path')
 const request_lib = require('request')
+const _ = require('lodash')
 
 const pg = require('./postgres')
+
+const config = function(public_config, private_config) {
+  return {
+    ...public_config,
+    ...private_config
+  }
+}
+
+const _config = config(require('../configs/public.json'), require('../configs/private.json'))
+pg.connect(_config.pg_config)
+
+const allIngredients = async function() {
+  return await pg.query(`select * from ingredients`)
+}
+
+const allDrinks = async function() {
+  const result = await pg.query(`
+    with drink_ingredients as (
+      select 
+        drink, 
+        json_agg(json_build_object(
+          'ingredient', drink_ingredients.ingredient, 
+          'premods', premods, 
+          'postmods', postmods, 
+          'quantity', quantity, 
+          'units', units,
+          'ingredient_info', row_to_json(ingredients)
+        )) as reciepe
+      from drink_ingredients 
+        join ingredients on drink_ingredients.ingredient = ingredients.ingredient
+      group by drink
+    ) select *
+    from drink_ingredients
+      join drinks on drink_ingredients.drink = drinks.drink
+    where drinks.alcoholic = true
+  `)
+
+  return _.map(result, drink => {
+    return {
+      ..._.omit(drink, ['source', 'source_contributor']),
+      source_avg_rating: parseFloat(drink.source_avg_rating),
+      reciepe: _.map(drink.reciepe, ingredient => {
+        return {
+          ...ingredient,
+          ingredient_info: _.omit(ingredient.ingredient_info, ['source'])
+        }
+      })
+    }
+  })
+}
 
 const request = async function(request_options, options={}) {
   return new Promise((resolve, reject) => {
@@ -15,13 +65,6 @@ const request = async function(request_options, options={}) {
     })
   })
   
-}
-
-const config = function(public_config, private_config) {
-  return {
-    ...public_config,
-    ...private_config
-  }
 }
 
 const sanitize = function(raw_string, options={}) {
@@ -54,11 +97,18 @@ const is_numeric_str = function(string) {
 }
 
 module.exports = {
-  request,
-  config,
+  /* data helper functions */
+  allIngredients,
+  allDrinks,
+
+  /* text helper functions */
   sanitize,
   is_numeric_str,
+
+  /* misc helper functions */
+  request,
+  config,
   
-  // imported utils
+  /* imported utils */
   pg
 }

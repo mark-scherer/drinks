@@ -56,8 +56,8 @@ const query = function(query_str, data, options={}) {
 }
 
 const one = function(query_str, data, name='default') {
-  return new Promise((resovle, reject) => {
-    const result = query(query_str, data, name)
+  return new Promise((resolve, reject) => {
+    const result = query(query_str, data, {name})
       .catch((err) => reject(err))
       .then((result) => {
         if (result.length !== 1) return reject(`Postgres util: query did not return single row (${result.length}): ${query_str}`)

@@ -60,7 +60,6 @@ create table drink_ingredients (
     unique (drink, ingredient, premods, postmods)
 )
 
-
 ----- scraping verification -----
 
 --- glasses ---
