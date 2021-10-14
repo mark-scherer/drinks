@@ -10,6 +10,32 @@ const drinkUtils = require('./utils')
 const CHOICE_COUNT = 3
 const GROUPING_SIZE = 1
 
+const parseInputs = function(allDrinksMap, chosenDrinkNames, unchosenDrinkNames) {
+  let chosenDrinks, unchosenDrinks, parseError
+  try {
+    chosenDrinks = _.map(chosenDrinkNames, name => {
+      if (!allDrinksMap[name]) throw Error(`getQuestion: unrecognized drink name (chosenDrinkNames): ${name}`)
+      return allDrinksMap[name]
+    })
+    unchosenDrinks = _.map(unchosenDrinkNames, name => {
+      if (!allDrinksMap[name]) throw Error(`getQuestion: unrecognized drink name (unchosenDrinkNames): ${name}`)
+      return allDrinksMap[name]
+    })
+  } catch (error) {
+    parseError = String(error)
+  }
+  
+  return {
+    chosenDrinks,
+    unchosenDrinks,
+    parseError
+  }
+}
+
+const getEligibleDrinks = function(allDrinksMap, uneligibleDrinks) {
+  return _.filter(Object.values(allDrinksMap), drink => !_.map(uneligibleDrinks, 'drink').includes(drink.drink))
+}
+
 /*
   inputs
     - allDrinksMap    : map of drink names, fully formatted drink object for all drinks (see backend_utils.allDrinks())
@@ -24,26 +50,17 @@ const getQuestion = async function(
   const start = Date.now()
   console.log(`getQuestion: ${JSON.stringify({ chosenDrinkNames, unchosenDrinkNames })}`)
 
-  let chosenDrinks, unchoseDrinks
-  try {
-    chosenDrinks = _.map(chosenDrinkNames, name => {
-      if (!allDrinksMap[name]) throw Error(`getQuestion: unrecognized drink name (chosenDrinkNames): ${name}`)
-      return allDrinksMap[name]
-    })
-    unchosenDrinks = _.map(unchosenDrinkNames, name => {
-      if (!allDrinksMap[name]) throw Error(`getQuestion: unrecognized drink name (unchosenDrinkNames): ${name}`)
-      return allDrinksMap[name]
-    })
-  } catch (validationError) {
+  const { chosenDrinks, unchosenDrinks, parseError } = parseInputs(allDrinksMap, chosenDrinkNames, unchosenDrinkNames)
+  if (parseError) {
     return {
       status: 400,
-      error: String(validationError)
+      error: String(parseError)
     }
-  }
+  }  
 
   let choices = []
   while(choices.length < CHOICE_COUNT) {
-    const eligibleDrinks = _.filter(Object.values(allDrinksMap), drink => !_.map(chosenDrinks, 'drink').includes(drink.drink) && !_.map(unchosenDrinks, 'drink').includes(drink.drink) && !_.map(choices, 'drink').includes(drink.drink))
+    const eligibleDrinks = getEligibleDrinks(allDrinksMap, _.flatten([chosenDrinks, unchosenDrinks, choices]))
 
     // highest score wins
     const scoredEligibleDrinks = _.map(_.shuffle(eligibleDrinks), eligible => {
@@ -56,21 +73,36 @@ const getQuestion = async function(
       }
     })
     const choiceGroup = _.sortBy(scoredEligibleDrinks, drink => -1*drink.score).slice(0, GROUPING_SIZE)
-
-    // console.log(`choice ${choices.length}: found ${choiceGroup.length} options: ${JSON.stringify({
-    //   choices: _.map(choices, drinkUtils.drinkSummary),
-    //   choiceGroup: _.map(choiceGroup, drink => {
-    //     return { drink: drinkUtils.drinkSummary(drink), score: drink.score }
-    //   })
-    // })}\n`)
     choices.push(_.shuffle(choiceGroup)[0])
   }
 
   const ellapsed = (Date.now() - start)
-  // console.log(`getQuestion: generated question (${ellapsed} ms): ${JSON.stringify(_.map(choices, drinkUtils.drinkSummary))}`)
   return {choices}
 }
 
+/*
+  inputs
+    - allDrinksMap    : map of drink names, fully formatted drink object for all drinks (see backend_utils.allDrinks())
+    - chosenDrinks    : list of names of drinks chosen in question rounds
+    - unchosenDrinks  : list of names of drinks not chosen in question rounds
+*/
+const getDrinks = async function(
+  allDrinksMap,
+  chosenDrinkNames,
+  unchosenDrinkNames
+) {
+  const { chosenDrinks, unchosenDrinks, parseError } = parseInputs(chosenDrinkNames, unchosenDrinkNames)
+  if (parseError) {
+    return {
+      status: 400,
+      error: String(parseError)
+    }
+  }   
+
+  throw Error(`getDrinks not yet implemented`)
+}
+
 module.exports = {
-  getQuestion
+  getQuestion,
+  getDrinks
 }
