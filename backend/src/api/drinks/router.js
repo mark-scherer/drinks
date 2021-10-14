@@ -9,8 +9,7 @@ const drinksRouter = new Router({ prefix: '/drinks' })
 const backendUtils = require('../../../utils/utils')
 const drinkUtils = require('./utils')
 
-const getQuestion = require('./drink_questions')
-// const drinks = require('./drinks')
+const { getQuestion } = require('./drinks_v2')
 
 // get all drinks at startup
 let allDrinksMap = {}, routerStart = Date.now()
@@ -41,13 +40,6 @@ drinksRouter.get('/question', async (ctx, next) => {
   }
   else ctx.body = questions
   console.log(`GET /question: got question in ${_.round(Date.now() - requestStart)}ms`)
-})
-// drinksRouter.get('/drinks', drinks)
-
-drinksRouter.get('/drinks', (ctx, next) => {
-  console.log(`drinks router: got request!`)
-  ctx.res.body = "response!"
-  return next()
 })
 
 module.exports = drinksRouter

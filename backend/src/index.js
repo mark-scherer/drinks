@@ -10,11 +10,11 @@ const router = require('./api/router')
 const app = new Koa()
 
 app
-  .use(router.routes(), router.allowedMethods())
   .use(async (ctx, next) => {     /* for dev only */
     ctx.set('Access-Control-Allow-Origin', '*')
     await next()
   })
+  .use(router.routes(), router.allowedMethods())
   .use(static(path.join(__dirname, '../../', config.frontend.DIST), {gzip: true}))
   .use(compress())
   .on('error', err => {

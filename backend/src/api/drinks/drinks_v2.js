@@ -71,4 +71,6 @@ const getQuestion = async function(
   return {choices}
 }
 
-module.exports = getQuestion
+module.exports = {
+  getQuestion
+}
