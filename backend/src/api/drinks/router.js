@@ -9,7 +9,7 @@ const drinksRouter = new Router({ prefix: '/drinks' })
 const backendUtils = require('../../../utils/utils')
 const drinkUtils = require('./utils')
 
-const { getQuestion } = require('./drinks_v2')
+const { getQuestion, getDrinks } = require('./drinks_v2')
 
 // get all drinks at startup
 let allDrinksMap = {}, routerStart = Date.now()
@@ -22,24 +22,60 @@ backendUtils.allDrinks()
     throw Error(`drinks router: error retrieving allDrinks: ${err}`)
   })
 
-// GET /drinks/question
-drinksRouter.get('/question', async (ctx, next) => {
-  const requestStart = Date.now()
-
+const parseInputs = function(ctx) {
   const {
     chosenDrinkNames,
     unchosenDrinkNames
   } = ctx.request.query
-  const _chosenDrinkNames = chosenDrinkNames ? chosenDrinkNames.split(',') : []
-  const _unchosenDrinkNames = unchosenDrinkNames ? unchosenDrinkNames.split(',') : []
-
-  const questions = await getQuestion(allDrinksMap, _chosenDrinkNames, _unchosenDrinkNames) // empty params for now
-  if (questions.error) {
-    ctx.response.status = questions.status
-    ctx.response.body = questions
+  return {
+    chosenDrinkNames: chosenDrinkNames ? chosenDrinkNames.split(',') : [],
+    unchosenDrinkNames: unchosenDrinkNames ? unchosenDrinkNames.split(',') : []
   }
-  else ctx.body = questions
+}
+
+const formatResponse = function(ctx, result) {
+  if (result.error) {
+    ctx.response.status = result.status
+    ctx.response.body = result
+  }
+  else ctx.body = result
+  
+  return ctx
+}
+
+// GET /drinks/question
+drinksRouter.get('/question', async (ctx, next) => {
+  const requestStart = Date.now()
+
+  const { chosenDrinkNames, unchosenDrinkNames } = parseInputs(ctx)
+  let result = {}
+  try {
+    result = await getQuestion(allDrinksMap, chosenDrinkNames, unchosenDrinkNames)
+  } catch (error) {
+    result.status = 500
+    result.error = String(error)
+  }
+  
+  ctx = formatResponse(ctx, result)
+
   console.log(`GET /question: got question in ${_.round(Date.now() - requestStart)}ms`)
+})
+
+// GET /drinks/drinks
+drinksRouter.get('/drinks', async (ctx, next) => {
+  const requestStart = Date.now()
+
+  const { chosenDrinkNames, unchosenDrinkNames } = parseInputs(ctx)
+  let result = {}
+  try {
+    result = await getDrinks(allDrinksMap, chosenDrinkNames, unchosenDrinkNames)
+  } catch (error) {
+    result.status = 500
+    result.error = String(error)
+  }
+  ctx = formatResponse(ctx, result)
+  
+  console.log(`GET /drinks: got ${result.length} drinks in ${_.round(Date.now() - requestStart)}ms`)
 })
 
 module.exports = drinksRouter

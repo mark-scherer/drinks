@@ -7,8 +7,9 @@ const _ = require('lodash')
 const backendUtils = require('../../../utils/utils')
 const drinkUtils = require('./utils')
 
-const CHOICE_COUNT = 3
-const GROUPING_SIZE = 1
+const CHOICE_COUNT = 3      // number of choices returned by getQuestion
+const DRINK_COUNT = 3       // number of drinks returned by getDrinks
+const GROUPING_SIZE = 1     // size of window of best scoing drinks to chose randomly from 
 
 const parseInputs = function(allDrinksMap, chosenDrinkNames, unchosenDrinkNames) {
   let chosenDrinks, unchosenDrinks, parseError
@@ -32,8 +33,22 @@ const parseInputs = function(allDrinksMap, chosenDrinkNames, unchosenDrinkNames)
   }
 }
 
-const getEligibleDrinks = function(allDrinksMap, uneligibleDrinks) {
-  return _.filter(Object.values(allDrinksMap), drink => !_.map(uneligibleDrinks, 'drink').includes(drink.drink))
+// helper method to pick single drink
+const pickDrink = function(allDrinksMap, ineligibleDrinks, chosenDrinks, unchosenDrinks, currentSetDrinks) {
+  const eligibleDrinks = _.filter(Object.values(allDrinksMap), drink => !_.map(ineligibleDrinks, 'drink').includes(drink.drink))
+
+  // highest score wins
+  const scoredEligibleDrinks = _.map(_.shuffle(eligibleDrinks), eligible => {
+    const score = (-1 * _.sumBy(chosenDrinks, chosen =>  drinkUtils.drinkDistance(eligible, chosen))) + // close to all chosenDrinks
+      _.sumBy(unchosenDrinks, unchosen => drinkUtils.drinkDistance(eligible, unchosen)) +  // not close to all unchoseDrinks
+      _.sumBy(currentSetDrinks, drink => drinkUtils.drinkDistance(eligible, drink)) // not close to all currentSetDrinks
+    return {
+      ...eligible,
+      score
+    }
+  })
+  const choiceGroup = _.sortBy(scoredEligibleDrinks, drink => -1*drink.score).slice(0, GROUPING_SIZE)
+  return _.shuffle(choiceGroup)[0]
 }
 
 /*
@@ -42,12 +57,11 @@ const getEligibleDrinks = function(allDrinksMap, uneligibleDrinks) {
     - chosenDrinks    : list of names of drinks chosen in previous question rounds
     - unchosenDrinks  : list of names of drinks not chosen in previous question rounds
 */
-const getQuestion = async function(
+const getQuestion = async function (
   allDrinksMap,
   chosenDrinkNames,
   unchosenDrinkNames
 ) {
-  const start = Date.now()
   console.log(`getQuestion: ${JSON.stringify({ chosenDrinkNames, unchosenDrinkNames })}`)
 
   const { chosenDrinks, unchosenDrinks, parseError } = parseInputs(allDrinksMap, chosenDrinkNames, unchosenDrinkNames)
@@ -60,24 +74,16 @@ const getQuestion = async function(
 
   let choices = []
   while(choices.length < CHOICE_COUNT) {
-    const eligibleDrinks = getEligibleDrinks(allDrinksMap, _.flatten([chosenDrinks, unchosenDrinks, choices]))
-
-    // highest score wins
-    const scoredEligibleDrinks = _.map(_.shuffle(eligibleDrinks), eligible => {
-      const score = (-1 * _.sumBy(chosenDrinks, chosen =>  drinkUtils.drinkDistance(eligible, chosen))) + // close to all chosenDrinks
-        _.sumBy(unchosenDrinks, unchosen => drinkUtils.drinkDistance(eligible, unchosen)) +  // not close to all unchoseDrinks
-        _.sumBy(choices, choice => drinkUtils.drinkDistance(eligible, choice)) // not close to all choices
-      return {
-        ...eligible,
-        score
-      }
-    })
-    const choiceGroup = _.sortBy(scoredEligibleDrinks, drink => -1*drink.score).slice(0, GROUPING_SIZE)
-    choices.push(_.shuffle(choiceGroup)[0])
+    choices.push(pickDrink(
+      allDrinksMap, 
+      _.flatten([chosenDrinks, unchosenDrinks, choices]), 
+      chosenDrinks, 
+      unchosenDrinks,
+      choices
+    ))
   }
 
-  const ellapsed = (Date.now() - start)
-  return {choices}
+  return { choices }
 }
 
 /*
@@ -86,12 +92,14 @@ const getQuestion = async function(
     - chosenDrinks    : list of names of drinks chosen in question rounds
     - unchosenDrinks  : list of names of drinks not chosen in question rounds
 */
-const getDrinks = async function(
+const getDrinks = async function (
   allDrinksMap,
   chosenDrinkNames,
   unchosenDrinkNames
 ) {
-  const { chosenDrinks, unchosenDrinks, parseError } = parseInputs(chosenDrinkNames, unchosenDrinkNames)
+  console.log(`getDrinks: ${JSON.stringify({ chosenDrinkNames, unchosenDrinkNames })}\n`)
+
+  const { chosenDrinks, unchosenDrinks, parseError } = parseInputs(allDrinksMap, chosenDrinkNames, unchosenDrinkNames)
   if (parseError) {
     return {
       status: 400,
@@ -99,7 +107,18 @@ const getDrinks = async function(
     }
   }   
 
-  throw Error(`getDrinks not yet implemented`)
+  let drinks = []
+  while(drinks.length < DRINK_COUNT) {
+    drinks.push(pickDrink(
+      allDrinksMap, 
+      _.flatten([chosenDrinks, unchosenDrinks, drinks]), 
+      chosenDrinks, 
+      unchosenDrinks,
+      drinks
+    ))
+  }
+
+  return { drinks }
 }
 
 module.exports = {
