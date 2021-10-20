@@ -12,12 +12,15 @@
       <Questionnaire 
         v-model:chosenDrinkNames="chosenDrinkNames"
         v-model:unchosenDrinkNames="unchosenDrinkNames" 
+        v-model:expanded="expandedQuestionnaire"
         :serverUrl="SERVER_URL"
         @done="getDrinks"
       />
 
       <DrinkList 
         :drinks="drinks"
+        :loading="loadingDrinks"
+        v-if="!expandedQuestionnaire"
       />
     </div>
   </div>
@@ -102,18 +105,40 @@ const SERVER_URL = process.env.NODE_ENV === 'development' ? `http://${window.loc
 //     })
 // }
 
-const fetchDrinksInfo = function(drinks) {
-  const url = new URL(`${SERVER_URL}/drinks/info`)
-  const params = { drinks }
+// fetch wrapper
+const _fetch = function(urlString, params ) {
+  const url = new URL(urlString)
   url.search = qs.stringify(params, { encode: false })
 
   return fetch(url)
     .then(response => {
       if (response.status !== 200) {
-        console.error(`getDrinks got non-200 response: ${response.status}`)
+        console.error(`_fetch got non-200 response: ${response.status}`)
       }
       return response.json()
     })
+}
+
+const fetchDrinksInfo = function(drinks) {
+  // const url = new URL(`${SERVER_URL}/drinks/info`)
+  // const params = { drinks }
+  // url.search = qs.stringify(params, { encode: false })
+
+  // return fetch(url)
+  //   .then(response => {
+  //     if (response.status !== 200) {
+  //       console.error(`fetchDrinksInfo got non-200 response: ${response.status}`)
+  //     }
+  //     return response.json()
+  //   })
+
+  const params = { drinks }
+  return _fetch(`${SERVER_URL}/drinks/info`, params)
+}
+
+const fetchDrinks = function(chosenDrinkNames, unchosenDrinkNames) {
+  const params = { chosenDrinkNames, unchosenDrinkNames }
+  return _fetch(`${SERVER_URL}/drinks/drinks`, params)
 }
 
 export default {
@@ -133,7 +158,8 @@ export default {
       excluded_drinks: [],
 
       /* page lifecycle state */
-      loading: false,
+      expandedQuestionnaire: true,
+      loadingDrinks: false,
       drinks_loaded: false,
 
       /* constants */
@@ -166,12 +192,12 @@ export default {
       const params = new URLSearchParams(window.location.search)
       const urlDrinks = params.get('drinks')
       if (urlDrinks && urlDrinks.length > 0) {
-        this.loading = true
+        this.loadingDrinks = true
         fetchDrinksInfo(urlDrinks)
           .then(drinks_info => {
             this.drinks = drinks_info
 
-            this.loading = false
+            this.loadingDrinks = false
             this.drinks_loaded = true
             this.show_count_msg = false
           })
@@ -191,7 +217,13 @@ export default {
 
     // get new drinks according to user inputs
     getDrinks() {
-      console.log(`App: fetching drinks!`)
+      this.expandedQuestionnaire = false
+      this.loadingDrinks = true
+      fetchDrinks(this.chosenDrinkNames, this.unchosenDrinkNames)
+        .then(response => {
+          this.drinks = response.drinks
+          this.loadingDrinks = false
+        })
     }
   },
   mounted() {
@@ -209,6 +241,11 @@ export default {
   .page {
     margin: 0 auto;
     max-width: 50%;
+  }
+  .section {
+    border: 1px solid black;
+    margin: 0 auto 20px;
+    padding: 20px;
   }
 
   /* icon styling */
@@ -299,6 +336,12 @@ export default {
   }
   .heading-font {
     font-family: "Playfair Display";
+  }
+  .loading-placeholder {
+    background: #cfcfcf;
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }
   .mod {
     color: red;

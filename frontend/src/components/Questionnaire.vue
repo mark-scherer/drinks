@@ -1,29 +1,41 @@
 <!-- Questionnaire: question machine to guide drink selection -->
 
 <template>
-  <div class="questionnaire">
-    <div class="heading heading-font">Let's find new drinks you'll love</div>
+  <div class="section">
 
-    <div class="question-block" v-if="!loadingQuestion">
-      <div class="subheading">{{formatQuestion()}}</div>
-      <div 
-        v-for="(choice, index) in choices" :key="choice.drink" 
-        class="choice button"
-        v-on:click="pickedChoice(index)"
-      >
-        <div>{{formatChoice(choice)}}</div>
-      </div>
-      <div class="footer">
+    <!-- content when expanded -->
+    <div v-if="expanded">
+      <div class="heading heading-font">Let's find new drinks you'll love</div>
+      <div class="question-block" v-if="!loadingQuestion">
+        <div class="subheading">{{formatQuestion()}}</div>
         <div 
-          class="button naked-button"
-          v-on:click="pickedChoice()"
-        >None of these</div>
-        <div>Question {{formattedCount}}</div>
+          v-for="(choice, index) in choices" :key="choice.drink" 
+          class="choice button"
+          v-on:click="pickedChoice(index)"
+        >
+          <div>{{formatChoice(choice)}}</div>
+        </div>
+        <div class="footer">
+          <div 
+            class="button naked-button"
+            v-on:click="pickedChoice()"
+          >None of these</div>
+          <div>Question {{formattedCount}}</div>
+        </div>
+      </div>
+      <div class="loading-placeholder question-block-placeholder" v-if="loadingQuestion">
+        <div>loading next question...</div>
       </div>
     </div>
-    <div class="question-block-placeholder" v-if="loadingQuestion">
-      <div>loading...</div>
+
+    <!-- content when collapsed -->
+    <div v-if="!expanded">
+      <div 
+        class="button naked-button"
+        v-on:click="restartQuestionnaire()"
+      >Start over</div>
     </div>
+
   </div>
 </template>
 
@@ -59,6 +71,8 @@ const INGREDIENT_PRECEDENCE = [
 export default {
   name: 'Questionnaire',
   props: {
+
+    /* outputs */
     chosenDrinkNames: {
       type: Array,
       required: true,
@@ -69,13 +83,22 @@ export default {
       required: true,
       description: 'two-way bound list of drink names not selected by the user in question rounds'
     },
+
+    /* display control */
+    expanded: {
+      type: Boolean,
+      required: true,
+      description: 'two-way bound control if questionnaire is expanded or collapsed'
+    },
+
+    /* misc settings */
     serverUrl:{
       type: String,
       required: true,
       description: 'base url of server'
     }
   },
-  emits: ['update:chosenDrinkNames', 'update:unchosenDrinkNames', 'done'],
+  emits: ['update:chosenDrinkNames', 'update:unchosenDrinkNames', 'update:expanded', 'done'],
   data() {
     return {
       /* class vars */
@@ -96,7 +119,6 @@ export default {
   },
   methods: {
     pickedChoice(index) {
-      console.log(`pickedChoice: ${index}`)
       const _choices = _.cloneDeep(this.choices)
 
       // updating two-way bound vars takes time, don't want to wait so we pass updated values directly into this.getNextQuestion()
@@ -161,6 +183,13 @@ export default {
       this.loadingQuestion = false
     },
 
+    restartQuestionnaire() {
+      this.$emit('update:chosenDrinkNames', [])
+      this.$emit('update:unchosenDrinkNames', [])
+      this.questionCount = 0
+      this.$emit('update:expanded', true)
+    },
+
     formatQuestion() {
       return _.shuffle(RECEIPE_QUESTIONS)[0]
     },
@@ -184,11 +213,6 @@ export default {
 </script>
 
 <style scoped>
-.questionnaire {
-  border: 1px solid black;
-  margin: 0 auto;
-  padding: 20px;
-}
 
 .heading {
   font-size: larger;
@@ -209,10 +233,6 @@ export default {
 
 .question-block-placeholder {
   height: 195px;
-  background: #cfcfcf;
-  display: flex;
-  justify-content: center;
-  align-items: center;
 }
 
 </style>
