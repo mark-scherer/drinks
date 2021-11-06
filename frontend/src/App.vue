@@ -160,8 +160,8 @@ const fetchDrinksInfo = function(drinks) {
   return _fetch(`${SERVER_URL}/drinks/info`, params)
 }
 
-const fetchDrinks = function(chosenDrinkNames, unchosenDrinkNames, availableIngredients, unavailableIngredients) {
-  const params = { chosenDrinkNames, unchosenDrinkNames, availableIngredients, unavailableIngredients }
+const fetchDrinks = function(chosenDrinkNames, unchosenDrinkNames, availableIngredientNames, unavailableIngredientNames) {
+  const params = { chosenDrinkNames, unchosenDrinkNames, availableIngredientNames, unavailableIngredientNames}
   return _fetch(`${SERVER_URL}/drinks/drinks`, params)
 }
 

@@ -11,16 +11,24 @@ const CHOICE_COUNT = 3      // number of choices returned by getQuestion
 const DRINK_COUNT = 3       // number of drinks returned by getDrinks
 const GROUPING_SIZE = 1     // size of window of best scoing drinks to chose randomly from 
 
-const parseInputs = function(allDrinksMap, chosenDrinkNames, unchosenDrinkNames) {
-  let chosenDrinks, unchosenDrinks, parseError
+const parseInputs = function(allIngredientsMap, allDrinksMap, chosenDrinkNames, unchosenDrinkNames, availableIngredientNames=[], unavailableIngredientNames=[]) {
+  let chosenDrinks, unchosenDrinks, availableIngredients, unavailableIngredients, parseError
   try {
     chosenDrinks = _.map(chosenDrinkNames, name => {
-      if (!allDrinksMap[name]) throw Error(`getQuestion: unrecognized drink name (chosenDrinkNames): ${name}`)
+      if (!allDrinksMap[name]) throw Error(`unrecognized drink name (chosenDrinkNames): ${name}`)
       return allDrinksMap[name]
     })
     unchosenDrinks = _.map(unchosenDrinkNames, name => {
-      if (!allDrinksMap[name]) throw Error(`getQuestion: unrecognized drink name (unchosenDrinkNames): ${name}`)
+      if (!allDrinksMap[name]) throw Error(`unrecognized drink name (unchosenDrinkNames): ${name}`)
       return allDrinksMap[name]
+    })
+    availableIngredients = _.map(availableIngredientNames, name => {
+      if (!allIngredientsMap[name]) throw Error(`unrecognized ingredient name (availableIngredients): ${name}`)
+      return allIngredientsMap[name]
+    })
+    unavailableIngredients = _.map(unavailableIngredientNames, name => {
+      if (!allIngredientsMap[name]) throw Error(`unrecognized ingredient name (unavailableIngredients): ${name}`)
+      return allIngredientsMap[name]
     })
   } catch (error) {
     parseError = String(error)
@@ -29,13 +37,20 @@ const parseInputs = function(allDrinksMap, chosenDrinkNames, unchosenDrinkNames)
   return {
     chosenDrinks,
     unchosenDrinks,
+    availableIngredients,
+    unavailableIngredients,
     parseError
   }
 }
 
 // helper method to pick single drink
-const pickDrink = function(allDrinksMap, ineligibleDrinks, chosenDrinks, unchosenDrinks, currentSetDrinks) {
-  const eligibleDrinks = _.filter(Object.values(allDrinksMap), drink => !_.map(ineligibleDrinks, 'drink').includes(drink.drink))
+const pickDrink = function({allDrinksMap, ineligibleDrinks, chosenDrinks, unchosenDrinks, unavailableIngredients, currentSetDrinks}) {
+  const eligibleDrinks = _.filter(Object.values(allDrinksMap), drink => {
+    const drinkEligible = !_.map(ineligibleDrinks, 'drink').includes(drink.drink)
+    const ingredientsAvailable = !unavailableIngredients || _.every(drink.reciepe, ingredient => !_.map(unavailableIngredients, 'ingredient').includes(ingredient.ingredient))
+    return drinkEligible && ingredientsAvailable
+  })
+  // console.log(`pickDrink: filtered ${Object.keys(allDrinksMap).length} drinks to ${eligibleDrinks.length} eligible drinks: ${JSON.stringify({ineligibleDrinks: (ineligibleDrinks || []).length, unavailableIngredients: (unavailableIngredients || []).length})}`)
 
   // highest score wins
   const scoredEligibleDrinks = _.map(_.shuffle(eligibleDrinks), eligible => {
@@ -64,7 +79,7 @@ const getQuestion = async function (
 ) {
   console.log(`getQuestion: ${JSON.stringify({ chosenDrinkNames, unchosenDrinkNames })}`)
 
-  const { chosenDrinks, unchosenDrinks, parseError } = parseInputs(allDrinksMap, chosenDrinkNames, unchosenDrinkNames)
+  const { chosenDrinks, unchosenDrinks, parseError } = parseInputs({}, allDrinksMap, chosenDrinkNames, unchosenDrinkNames)
   if (parseError) {
     return {
       status: 400,
@@ -74,13 +89,13 @@ const getQuestion = async function (
 
   let choices = []
   while(choices.length < CHOICE_COUNT) {
-    choices.push(pickDrink(
+    choices.push(pickDrink({
       allDrinksMap, 
-      _.flatten([chosenDrinks, unchosenDrinks, choices]), 
+      ineligibleDrinks: _.flatten([chosenDrinks, unchosenDrinks, choices]), 
       chosenDrinks, 
       unchosenDrinks,
-      choices
-    ))
+      currentSetDrinks: choices
+    }))
   }
 
   return { choices }
@@ -88,18 +103,30 @@ const getQuestion = async function (
 
 /*
   inputs
-    - allDrinksMap    : map of drink names, fully formatted drink object for all drinks (see backend_utils.allDrinks())
-    - chosenDrinks    : list of names of drinks chosen in question rounds
-    - unchosenDrinks  : list of names of drinks not chosen in question rounds
+    - allIngredientsMap           : map of drink ingredients names, fully formatted ingredient object for all ingredients (see backend_utils.allIngredients())
+    - allDrinksMap                : map of drink names, fully formatted drink object for all drinks (see backend_utils.allDrinks())
+    - chosenDrinkNames            : list of names of drinks chosen in question rounds
+    - unchosenDrinkNames          : list of names of drinks not chosen in question rounds
+    - availableIngredientNames    : list of names of ingredients indicated by user as available
+    - unavailableIngredientNames  : list of names of ingredients indicated by user as available
 */
 const getDrinks = async function (
+  allIngredientsMap,
   allDrinksMap,
   chosenDrinkNames,
-  unchosenDrinkNames
+  unchosenDrinkNames,
+  availableIngredientNames,
+  unavailableIngredientNames
 ) {
-  console.log(`getDrinks: ${JSON.stringify({ chosenDrinkNames, unchosenDrinkNames })}\n`)
+  console.log(`getDrinks: ${JSON.stringify({ chosenDrinkNames, unchosenDrinkNames, availableIngredientNames, unavailableIngredientNames })}\n`)
 
-  const { chosenDrinks, unchosenDrinks, parseError } = parseInputs(allDrinksMap, chosenDrinkNames, unchosenDrinkNames)
+  const { 
+    chosenDrinks, 
+    unchosenDrinks, 
+    availableIngredients,
+    unavailableIngredients,
+    parseError 
+  } = parseInputs(allIngredientsMap, allDrinksMap, chosenDrinkNames, unchosenDrinkNames, availableIngredientNames, unavailableIngredientNames)
   if (parseError) {
     return {
       status: 400,
@@ -109,13 +136,14 @@ const getDrinks = async function (
 
   let drinks = []
   while(drinks.length < DRINK_COUNT) {
-    drinks.push(pickDrink(
+    drinks.push(pickDrink({
       allDrinksMap, 
-      _.flatten([chosenDrinks, unchosenDrinks, drinks]), 
+      ineligibleDrinks: _.flatten([chosenDrinks, unchosenDrinks, drinks]), 
       chosenDrinks, 
       unchosenDrinks,
-      drinks
-    ))
+      unavailableIngredients,
+      currentSetDrinks: drinks
+    }))
   }
 
   return { drinks }

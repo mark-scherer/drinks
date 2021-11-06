@@ -64,7 +64,17 @@ const request = async function(request_options, options={}) {
       return resolve(result)
     })
   })
-  
+}
+
+const parseQueryArray = function(ctx, varName) {
+  const query = ctx.request.query
+  // console.log(`parseQueryArray: ${JSON.stringify({ varName, query })}`)
+  if (query[varName] !== null && query[varName] !== undefined) {
+    return query[varName] ? query[varName].split(',') : []
+  } else {
+    const keyMatches = _.filter(Object.keys(query), key => key.startsWith(varName))
+    return _.map(keyMatches, key => query[key])
+  }
 }
 
 const sanitize = function(raw_string, options={}) {
@@ -107,6 +117,7 @@ module.exports = {
 
   /* misc helper functions */
   request,
+  parseQueryArray,
   config,
   
   /* imported utils */

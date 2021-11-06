@@ -11,8 +11,16 @@ const drinkUtils = require('./utils')
 
 const { getQuestion, getDrinks } = require('./drinks_v2')
 
-// get all drinks at startup
-let allDrinksMap = {}, routerStart = Date.now()
+// get all ingredients, drinks at startup
+let allIngredientsMap = {}, allDrinksMap = {}, routerStart = Date.now()
+backendUtils.allIngredients()
+  .then(allIngredients => {
+    allIngredientsMap = _.fromPairs(_.map(allIngredients, ingredient => [ingredient.ingredient, ingredient]))
+    console.log(`drinks router: retrieved ${Object.keys(allIngredientsMap).length} ingredients in ${_.round(Date.now() - routerStart)}ms`)
+  })
+  .catch(err => {
+    throw Error(`drinks router: error retrieving allIngredients: ${err}`)
+  })
 backendUtils.allDrinks()
   .then(allDrinks => {
     allDrinksMap = _.fromPairs(_.map(allDrinks, drink => [drink.drink, drink]))
@@ -23,13 +31,13 @@ backendUtils.allDrinks()
   })
 
 const parseInputs = function(ctx) {
-  const {
-    chosenDrinkNames,
-    unchosenDrinkNames
-  } = ctx.request.query
+  // console.log(`parseInputs: ${JSON.stringify({ query: ctx.request.query, chosenDrinkNames: ctx.request.query.chosenDrinkNames, unavailableIngredientNames: ctx.request.query.unavailableIngredientNames })}`)
+
   return {
-    chosenDrinkNames: chosenDrinkNames ? chosenDrinkNames.split(',') : [],
-    unchosenDrinkNames: unchosenDrinkNames ? unchosenDrinkNames.split(',') : []
+    chosenDrinkNames: backendUtils.parseQueryArray(ctx, 'chosenDrinkNames') || [],
+    unchosenDrinkNames: backendUtils.parseQueryArray(ctx, 'unchosenDrinkNames') || [],
+    availableIngredientNames: backendUtils.parseQueryArray(ctx, 'availableIngredientNames'),
+    unavailableIngredientNames: backendUtils.parseQueryArray(ctx, 'unavailableIngredientNames')
   }
 }
 
@@ -58,24 +66,32 @@ drinksRouter.get('/question', async (ctx, next) => {
   
   ctx = formatResponse(ctx, result)
 
-  console.log(`GET /question: got question in ${_.round(Date.now() - requestStart)}ms`)
+  if (result.error) console.log(`GET /question: errored getting question in ${_.round(Date.now() - requestStart)}ms: ${result.error}\n`)
+  else console.log(`GET /question: got question in ${_.round(Date.now() - requestStart)}ms\n`)
 })
 
 // GET /drinks/drinks
 drinksRouter.get('/drinks', async (ctx, next) => {
   const requestStart = Date.now()
 
-  const { chosenDrinkNames, unchosenDrinkNames } = parseInputs(ctx)
+  const { 
+    chosenDrinkNames, 
+    unchosenDrinkNames,
+    availableIngredientNames,
+    unavailableIngredientNames
+  } = parseInputs(ctx)
+
   let result = {}
   try {
-    result = await getDrinks(allDrinksMap, chosenDrinkNames, unchosenDrinkNames)
+    result = await getDrinks(allIngredientsMap, allDrinksMap, chosenDrinkNames, unchosenDrinkNames, availableIngredientNames, unavailableIngredientNames)
   } catch (error) {
     result.status = 500
     result.error = String(error)
   }
   ctx = formatResponse(ctx, result)
   
-  console.log(`GET /drinks: got ${result.length} drinks in ${_.round(Date.now() - requestStart)}ms`)
+  if (result.error) console.log(`GET /drinks: errored getting drinks in ${_.round(Date.now() - requestStart)}ms: ${result.error}\n`)
+  else console.log(`GET /drinks: got ${result.drinks.length} drinks in ${_.round(Date.now() - requestStart)}ms\n`)
 })
 
 module.exports = drinksRouter
