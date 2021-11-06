@@ -9,18 +9,41 @@
         <div class="logo heading-font">SpinTheShaker</div>
       </div>
 
+      <!-- collapsed controls sections -->
+      <div v-if="pageState !== 'questions'" class="section controls">
+        <div 
+          class="button naked-button"
+          @click="restart()"
+        >Start Over</div>
+        <div 
+          v-if="this.allAvailableIngredients.length || this.allUnavailableIngredients.length"
+          class="button naked-button reset-button"
+          @click="resetIngredientAvailability()"
+        >{{resetIngredientsMessage}}</div>
+      </div>
+
       <Questionnaire 
+        v-if="pageState === 'questions'"
         v-model:chosenDrinkNames="chosenDrinkNames"
         v-model:unchosenDrinkNames="unchosenDrinkNames" 
-        v-model:expanded="expandedQuestionnaire"
         :serverUrl="SERVER_URL"
-        @done="getDrinks"
+        @done="questionsDone"
+        @reopened="questionsReopened"
+      />
+
+      <IngredientChecker
+        v-if="pageState === 'ingredients'"
+        :loadingDrinks="loadingDrinks"
+        :ingredientsToCheck="uncheckedIngredients"
+        :knownAvailableIngredients="allAvailableIngredients.length"
+        :knownUnavailableIngredients="allUnavailableIngredients.length"
+        @checked="ingredientsDone"
       />
 
       <DrinkList 
         :drinks="drinks"
-        :loading="loadingDrinks"
-        v-if="!expandedQuestionnaire"
+        :loading="false"
+        v-if="pageState === 'drinks'"
       />
     </div>
   </div>
@@ -33,6 +56,7 @@ const _ = require('lodash')
 // const config = require('./incl/config')
 
 import Questionnaire from './components/Questionnaire.vue'
+import IngredientChecker from './components/IngredientChecker.vue'
 import DrinkList from './components/DrinkList.vue'
 
 // for dev, need to specify the port... dev server doesn't use express
@@ -136,8 +160,8 @@ const fetchDrinksInfo = function(drinks) {
   return _fetch(`${SERVER_URL}/drinks/info`, params)
 }
 
-const fetchDrinks = function(chosenDrinkNames, unchosenDrinkNames) {
-  const params = { chosenDrinkNames, unchosenDrinkNames }
+const fetchDrinks = function(chosenDrinkNames, unchosenDrinkNames, availableIngredients, unavailableIngredients) {
+  const params = { chosenDrinkNames, unchosenDrinkNames, availableIngredients, unavailableIngredients }
   return _fetch(`${SERVER_URL}/drinks/drinks`, params)
 }
 
@@ -145,6 +169,7 @@ export default {
   name: 'App',
   components: {
     Questionnaire,
+    IngredientChecker,
     DrinkList,
   },
   data() {
@@ -152,6 +177,8 @@ export default {
       /* user inputs */
       chosenDrinkNames: [],
       unchosenDrinkNames: [],
+      allAvailableIngredients: [],
+      allUnavailableIngredients: [],
 
       /* current results state */
       drinks: [],
@@ -160,13 +187,28 @@ export default {
       /* page lifecycle state */
       expandedQuestionnaire: true,
       loadingDrinks: false,
-      drinks_loaded: false,
+      pageState: 'questions', // can be 'questions', 'ingredients' or 'drinks'
 
       /* constants */
       SERVER_URL: SERVER_URL
     }
   },
-  computed: {},
+  computed: {
+    uncheckedIngredients() {
+      return _.chain(this.drinks)
+        .map(drink => drink.reciepe)
+        .flatten()
+        .map(ingredient => ingredient.ingredient)
+        .filter(ingredientName => !this.allAvailableIngredients.includes(ingredientName) && !this.allUnavailableIngredients.includes(ingredientName))
+        .sortBy()
+        .uniq()
+        .value()
+    },
+
+    resetIngredientsMessage() {
+      return `Reset ${this.allAvailableIngredients.length} available and ${this.allUnavailableIngredients.length} unavailable ingredients`
+    }
+  },
   methods: {
     // replaceDrink(index) {
     //   console.log(`replacing drink: ${index}`)
@@ -180,7 +222,6 @@ export default {
     //       this.drinks = this.drinks.concat(drinks_response.drinks)
 
     //       this.loading = false
-    //       this.drinks_loaded = true
     //       this.show_count_msg = true
 
     //       this.updateQueryString()
@@ -198,7 +239,6 @@ export default {
             this.drinks = drinks_info
 
             this.loadingDrinks = false
-            this.drinks_loaded = true
             this.show_count_msg = false
           })
       }
@@ -215,15 +255,48 @@ export default {
       } else console.error(`updateQueryString: cannot access history.pushState`)
     },
 
-    // get new drinks according to user inputs
-    getDrinks() {
-      this.expandedQuestionnaire = false
+    /* page state transitions */
+    questionsDone() {
+      this.loadDrinks()
+    },
+    questionsReopened() {
+      this.pageState = 'questions'
+      this.chosenDrinkNames = []
+      this.unchosenDrinkNames = []
+    },
+    ingredientsDone({ _availableIngredients, _unavailableIngredients }) {
+
+      this.allAvailableIngredients.push(..._availableIngredients)
+      this.allUnavailableIngredients.push(..._unavailableIngredients)
+
+      if (_unavailableIngredients.length === 0) {
+        this.pageState = 'drinks'
+      } else {
+        this.loadDrinks()
+      }
+    },
+
+    /* helper functions */
+    loadDrinks() {
+      this.pageState = 'ingredients'
       this.loadingDrinks = true
-      fetchDrinks(this.chosenDrinkNames, this.unchosenDrinkNames)
+      fetchDrinks(this.chosenDrinkNames, this.unchosenDrinkNames, this.allAvailableIngredients, this.allUnavailableIngredients)
         .then(response => {
           this.drinks = response.drinks
           this.loadingDrinks = false
+          if (this.uncheckedIngredients.length === 0) this.pageState = 'drinks'
         })
+    },
+    restart() {
+      this.chosenDrinkNames = []
+      this.unchosenDrinkNames = []
+      this.drinks = []
+      this.pageState = 'questions'
+    },
+    resetIngredientAvailability() {
+      this.allAvailableIngredients = []
+      this.allUnavailableIngredients = []
+      this.loadDrinks()
     }
   },
   mounted() {
@@ -277,20 +350,86 @@ export default {
     font-weight: 600;
   }
 
+  /* controls section */
+  .controls {
+    display: flex;
+    flex-direction: row;
+  }
+  .controls .button {
+    width: 100%;
+  }
+  .reset-button {
+    white-space: nowrap;
+    flex-grow: 2;
+  }
+
   /* input section */
 
   /* input button styling */
   .button {
     cursor: pointer;
     background: lightgray;
-    margin: 5px 0;
+    margin: 5px;
     padding: 5px;
+    -webkit-transition: all .2s;
+      transition: all .2s;
   }
   .naked-button {
     background: none;
   }
   .button:hover {
     background: gray;
+  }
+
+  /* checkbox styling */
+  [type="checkbox"] {
+    position: absolute;
+    left: 0;
+    opacity: 0.01;
+  }
+  [type="checkbox"] ~ label {
+    position: relative;
+    padding-left: 2.3em;
+    font-size: 1.05em;
+    line-height: 1.7;
+    cursor: pointer;
+  }
+  [type="checkbox"] ~ label:before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 1.4em;
+    height: 1.4em;
+    border: 1px solid #aaa;
+    background: #FFF;
+    border-radius: .2em;
+    box-shadow: inset 0 1px 3px rgba(0,0,0, .1), 0 0 0 rgba(203, 34, 237, .2);
+  }
+  [type="checkbox"] ~ label:after {
+    content: '✕';
+    position: absolute;
+    top: .525em;
+    left: .18em;
+    font-size: 1.375em;
+    color: #d40000;
+    line-height: 0;
+  }
+
+  // checking animation styling
+  [type="checkbox"] ~ label:after {
+    -webkit-transition: all .2s;
+      transition: all .2s;
+  }
+  [type="checkbox"]:not(:checked) ~ label:after {
+    opacity: 0;
+    -webkit-transform: scale(0);
+      transform: scale(0);
+  }
+  [type="checkbox"]:checked ~ label:after {
+    opacity: 1;
+    -webkit-transform: scale(1);
+      transform: scale(1);
   }
 
   /* ingredient category styling */

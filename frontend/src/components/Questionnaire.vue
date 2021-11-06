@@ -3,37 +3,28 @@
 <template>
   <div class="section">
 
-    <!-- content when expanded -->
-    <div v-if="expanded">
-      <div class="heading heading-font">Let's find new drinks you'll love</div>
-      <div class="question-block" v-if="!loadingQuestion">
-        <div class="subheading">{{formatQuestion()}}</div>
-        <div 
-          v-for="(choice, index) in choices" :key="choice.drink" 
-          class="choice button"
-          v-on:click="pickedChoice(index)"
-        >
-          <div>{{formatChoice(choice)}}</div>
-        </div>
-        <div class="footer">
-          <div 
-            class="button naked-button"
-            v-on:click="pickedChoice()"
-          >None of these</div>
-          <div>Question {{formattedCount}}</div>
-        </div>
+    <div class="heading heading-font">Let's find new drinks you'll love</div>
+
+    <div class="question-block" v-if="!loadingQuestion">
+      <div class="subheading">{{formatQuestion()}}</div>
+      <div 
+        v-for="(choice, index) in choices" :key="choice.drink" 
+        class="choice button"
+        v-on:click="pickedChoice(index)"
+      >
+        <div>{{formatChoice(choice)}}</div>
       </div>
-      <div class="loading-placeholder question-block-placeholder" v-if="loadingQuestion">
-        <div>loading next question...</div>
+      <div class="footer">
+        <div 
+          class="button naked-button"
+          v-on:click="pickedChoice()"
+        >None of these</div>
+        <div>Question {{formattedCount}}</div>
       </div>
     </div>
 
-    <!-- content when collapsed -->
-    <div v-if="!expanded">
-      <div 
-        class="button naked-button"
-        v-on:click="restartQuestionnaire()"
-      >Start over</div>
+    <div class="loading-placeholder question-block-placeholder" v-if="loadingQuestion">
+      <div>loading next question...</div>
     </div>
 
   </div>
@@ -84,13 +75,6 @@ export default {
       description: 'two-way bound list of drink names not selected by the user in question rounds'
     },
 
-    /* display control */
-    expanded: {
-      type: Boolean,
-      required: true,
-      description: 'two-way bound control if questionnaire is expanded or collapsed'
-    },
-
     /* misc settings */
     serverUrl:{
       type: String,
@@ -98,7 +82,7 @@ export default {
       description: 'base url of server'
     }
   },
-  emits: ['update:chosenDrinkNames', 'update:unchosenDrinkNames', 'update:expanded', 'done'],
+  emits: ['update:chosenDrinkNames', 'update:unchosenDrinkNames', 'done'],
   data() {
     return {
       /* class vars */
@@ -181,13 +165,6 @@ export default {
       this.choices = questionResponse.choices
       this.questionCount += 1
       this.loadingQuestion = false
-    },
-
-    restartQuestionnaire() {
-      this.$emit('update:chosenDrinkNames', [])
-      this.$emit('update:unchosenDrinkNames', [])
-      this.questionCount = 0
-      this.$emit('update:expanded', true)
     },
 
     formatQuestion() {
