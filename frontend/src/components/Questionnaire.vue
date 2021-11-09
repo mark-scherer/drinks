@@ -127,14 +127,17 @@ export default {
     async getNextQuestion(_chosenDrinkNames, _unchosenDrinkNames) {
       this.loadingQuestion = true
 
-      const url = new URL(QUESTION_ENDPOINT, this.serverUrl)
-      url.searchParams.set('chosenDrinkNames', _chosenDrinkNames || this.chosenDrinkNames)
-      url.searchParams.set('unchosenDrinkNames', _unchosenDrinkNames || this.unchosenDrinkNames)
+      const body = JSON.stringify({
+        chosenDrinkNames: _chosenDrinkNames || this.chosenDrinkNames,
+        unchosenDrinkNames: _unchosenDrinkNames || this.unchosenDrinkNames
+      })
 
       let fullQuestionResponse, questionResponse
       try {
-        questionResponse = await fetch(url, {method: 'GET'})
-          .then(rawResponse => {
+        questionResponse = await fetch(new URL(QUESTION_ENDPOINT, this.serverUrl), {
+          method: 'POST', 
+          body
+        }).then(rawResponse => {
             fullQuestionResponse = rawResponse
             return rawResponse.json()
           })

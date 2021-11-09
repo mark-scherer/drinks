@@ -4,6 +4,7 @@
 
 const _ = require('lodash')
 const Router = require('@koa/router')
+const bodyParser = require('koa-bodyparser')
 const drinksRouter = new Router({ prefix: '/drinks' })
 
 const backendUtils = require('../../../utils/utils')
@@ -31,67 +32,48 @@ backendUtils.allDrinks()
   })
 
 const parseInputs = function(ctx) {
-  // console.log(`parseInputs: ${JSON.stringify({ query: ctx.request.query, chosenDrinkNames: ctx.request.query.chosenDrinkNames, unavailableIngredientNames: ctx.request.query.unavailableIngredientNames })}`)
-
   return {
-    chosenDrinkNames: backendUtils.parseQueryArray(ctx, 'chosenDrinkNames') || [],
-    unchosenDrinkNames: backendUtils.parseQueryArray(ctx, 'unchosenDrinkNames') || [],
-    availableIngredientNames: backendUtils.parseQueryArray(ctx, 'availableIngredientNames'),
-    unavailableIngredientNames: backendUtils.parseQueryArray(ctx, 'unavailableIngredientNames')
+    chosenDrinkNames: ctx.request.body.chosenDrinkNames || [],
+    unchosenDrinkNames: ctx.request.body.unchosenDrinkNames || [],
+    availableIngredientNames: ctx.request.body.availableIngredientNames,
+    unavailableIngredientNames: ctx.request.body.unavailableIngredientNames
   }
 }
 
-const formatResponse = function(ctx, result) {
-  if (result.error) {
-    ctx.response.status = result.status
-    ctx.response.body = result
-  }
-  else ctx.body = result
-  
-  return ctx
-}
+drinksRouter.use(bodyParser({ enableTypes: ['json', 'text'] }))
+drinksRouter.use(async (ctx, next) => {
+  const start = Date.now()
+  ctx.request.body = JSON.parse(ctx.request.body)
+  console.log(`${ctx.method}: ${ctx.path}: got request: ${JSON.stringify({ requestBody: ctx.request.body })}`)
 
-// GET /drinks/question
-drinksRouter.get('/question', async (ctx, next) => {
-  const requestStart = Date.now()
-
-  const { chosenDrinkNames, unchosenDrinkNames } = parseInputs(ctx)
-  let result = {}
   try {
-    result = await getQuestion(allDrinksMap, chosenDrinkNames, unchosenDrinkNames)
+    await next()
   } catch (error) {
-    result.status = 500
-    result.error = String(error)
+    ctx.response.status = 500
+    ctx.body = `server error: ${error}`
+    console.error(`${ctx.method}: ${ctx.path}: error handling request: ${error}`)
   }
-  
-  ctx = formatResponse(ctx, result)
 
-  if (result.error) console.log(`GET /question: errored getting question in ${_.round(Date.now() - requestStart)}ms: ${result.error}\n`)
-  else console.log(`GET /question: got question in ${_.round(Date.now() - requestStart)}ms\n`)
+  console.log(`${ctx.method}: ${ctx.path}: finished handling request in ${Date.now() - start}ms\n`)
 })
 
-// GET /drinks/drinks
-drinksRouter.get('/drinks', async (ctx, next) => {
-  const requestStart = Date.now()
+// POST /drinks/question
+  // post so can send body
+drinksRouter.post('/question', async (ctx, next) => {
+  const { chosenDrinkNames, unchosenDrinkNames } = parseInputs(ctx)
+  ctx.body = await getQuestion(allDrinksMap, chosenDrinkNames, unchosenDrinkNames)
+})
 
+// POST /drinks/drinks
+  // post so can send body
+drinksRouter.post('/drinks', async (ctx, next) => {
   const { 
     chosenDrinkNames, 
     unchosenDrinkNames,
     availableIngredientNames,
     unavailableIngredientNames
   } = parseInputs(ctx)
-
-  let result = {}
-  try {
-    result = await getDrinks(allIngredientsMap, allDrinksMap, chosenDrinkNames, unchosenDrinkNames, availableIngredientNames, unavailableIngredientNames)
-  } catch (error) {
-    result.status = 500
-    result.error = String(error)
-  }
-  ctx = formatResponse(ctx, result)
-  
-  if (result.error) console.log(`GET /drinks: errored getting drinks in ${_.round(Date.now() - requestStart)}ms: ${result.error}\n`)
-  else console.log(`GET /drinks: got ${result.drinks.length} drinks in ${_.round(Date.now() - requestStart)}ms\n`)
+  ctx.body = await getDrinks(allIngredientsMap, allDrinksMap, chosenDrinkNames, unchosenDrinkNames, availableIngredientNames, unavailableIngredientNames)
 })
 
 module.exports = drinksRouter

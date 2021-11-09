@@ -130,11 +130,11 @@ const SERVER_URL = process.env.NODE_ENV === 'development' ? `http://${window.loc
 // }
 
 // fetch wrapper
-const _fetch = function(urlString, params ) {
+const _fetch = function(urlString, options={} ) {
   const url = new URL(urlString)
-  url.search = qs.stringify(params, { encode: false })
+  url.search = qs.stringify(options.queryParams || {}, { encode: false })
 
-  return fetch(url)
+  return fetch(url, options)
     .then(response => {
       if (response.status !== 200) {
         console.error(`_fetch got non-200 response: ${response.status}`)
@@ -144,25 +144,19 @@ const _fetch = function(urlString, params ) {
 }
 
 const fetchDrinksInfo = function(drinks) {
-  // const url = new URL(`${SERVER_URL}/drinks/info`)
-  // const params = { drinks }
-  // url.search = qs.stringify(params, { encode: false })
-
-  // return fetch(url)
-  //   .then(response => {
-  //     if (response.status !== 200) {
-  //       console.error(`fetchDrinksInfo got non-200 response: ${response.status}`)
-  //     }
-  //     return response.json()
-  //   })
-
-  const params = { drinks }
-  return _fetch(`${SERVER_URL}/drinks/info`, params)
+  const options = {
+    method: 'POST',
+    body: JSON.stringify({ drinks })
+  }
+  return _fetch(`${SERVER_URL}/drinks/info`, options)
 }
 
 const fetchDrinks = function(chosenDrinkNames, unchosenDrinkNames, availableIngredientNames, unavailableIngredientNames) {
-  const params = { chosenDrinkNames, unchosenDrinkNames, availableIngredientNames, unavailableIngredientNames}
-  return _fetch(`${SERVER_URL}/drinks/drinks`, params)
+  const options = {
+    method: 'POST',
+    body: JSON.stringify({ chosenDrinkNames, unchosenDrinkNames, availableIngredientNames, unavailableIngredientNames})
+  }
+  return _fetch(`${SERVER_URL}/drinks/drinks`, options)
 }
 
 export default {
