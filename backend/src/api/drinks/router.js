@@ -33,8 +33,8 @@ backendUtils.allDrinks()
 
 const parseInputs = function(ctx) {
   return {
-    chosenDrinkNames: ctx.request.body.chosenDrinkNames || [],
-    unchosenDrinkNames: ctx.request.body.unchosenDrinkNames || [],
+    chosenDrinks: ctx.request.body.chosenDrinks || [],
+    unchosenDrinks: ctx.request.body.unchosenDrinks || [],
     availableIngredientNames: ctx.request.body.availableIngredientNames,
     unavailableIngredientNames: ctx.request.body.unavailableIngredientNames
   }
@@ -44,7 +44,11 @@ drinksRouter.use(bodyParser({ enableTypes: ['json', 'text'] }))
 drinksRouter.use(async (ctx, next) => {
   const start = Date.now()
   ctx.request.body = JSON.parse(ctx.request.body)
-  console.log(`${ctx.method}: ${ctx.path}: got request: ${JSON.stringify({ requestBody: ctx.request.body })}`)
+  console.log(`${ctx.method}: ${ctx.path}: got request: ${JSON.stringify({ requestBody: {
+    ...ctx.request.body,
+    chosenDrinks: _.map(ctx.request.body.chosenDrinks, 'drink'),
+    unchosenDrinks: _.map(ctx.request.body.unchosenDrinks, 'drink')
+  } })}`)
 
   try {
     await next()
@@ -60,20 +64,20 @@ drinksRouter.use(async (ctx, next) => {
 // POST /drinks/question
   // post so can send body
 drinksRouter.post('/question', async (ctx, next) => {
-  const { chosenDrinkNames, unchosenDrinkNames } = parseInputs(ctx)
-  ctx.body = await getQuestion(allDrinksMap, chosenDrinkNames, unchosenDrinkNames)
+  const { chosenDrinks, unchosenDrinks } = parseInputs(ctx)
+  ctx.body = await getQuestion(allDrinksMap, chosenDrinks, unchosenDrinks)
 })
 
 // POST /drinks/drinks
   // post so can send body
 drinksRouter.post('/drinks', async (ctx, next) => {
   const { 
-    chosenDrinkNames, 
-    unchosenDrinkNames,
+    chosenDrinks, 
+    unchosenDrinks,
     availableIngredientNames,
     unavailableIngredientNames
   } = parseInputs(ctx)
-  ctx.body = await getDrinks(allIngredientsMap, allDrinksMap, chosenDrinkNames, unchosenDrinkNames, availableIngredientNames, unavailableIngredientNames)
+  ctx.body = await getDrinks(allIngredientsMap, allDrinksMap, chosenDrinks, unchosenDrinks, availableIngredientNames, unavailableIngredientNames)
 })
 
 module.exports = drinksRouter

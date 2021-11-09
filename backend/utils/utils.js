@@ -29,7 +29,7 @@ const allDrinks = async function() {
           'quantity', quantity, 
           'units', units,
           'ingredient_info', row_to_json(ingredients)
-        )) as reciepe
+        )) as recipe
       from drink_ingredients 
         join ingredients on drink_ingredients.ingredient = ingredients.ingredient
       group by drink
@@ -43,7 +43,7 @@ const allDrinks = async function() {
     return {
       ..._.omit(drink, ['source', 'source_contributor']),
       source_avg_rating: parseFloat(drink.source_avg_rating),
-      reciepe: _.map(drink.reciepe, ingredient => {
+      recipe: _.map(drink.recipe, ingredient => {
         return {
           ...ingredient,
           ingredient_info: _.omit(ingredient.ingredient_info, ['source'])

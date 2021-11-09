@@ -38,9 +38,9 @@ const ingredientDistance = function(otherIngredient, ingredientMap) {
 
 // _ingredientMap is updated by reference for reuse in subsequent calls
 const drinkDistance = function(baseDrink, otherDrink, allIngredients, _ingredientMap={}) {
-  return _.chain(baseDrink.reciepe)
+  return _.chain(baseDrink.recipe)
     .map(baseIngredient => {
-      return _.chain(otherDrink.reciepe)
+      return _.chain(otherDrink.recipe)
         .map(otherIngredient => {
           if (!_ingredientMap[baseIngredient.ingredient]) _ingredientMap[baseIngredient.ingredient] = ingredientMap(baseIngredient.ingredient_info, allIngredients)
           return ingredientDistance(otherIngredient, _ingredientMap[baseIngredient.ingredient])
@@ -55,7 +55,7 @@ const drinkDistance = function(baseDrink, otherDrink, allIngredients, _ingredien
 const drinkSummary = function(drinkInfo) {
   return {
     ..._.pick(drinkInfo, ['drink', 'glass', 'category', 'alcoholic', /*'source_avg_rating', 'source_rating_count'*/]),
-    reciepe : _.map(drinkInfo.reciepe, 'ingredient')
+    recipe : _.map(drinkInfo.recipe, 'ingredient')
   }
 }
 
