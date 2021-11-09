@@ -24,8 +24,8 @@
 
       <Questionnaire 
         v-if="pageState === 'questions'"
-        v-model:chosenDrinkNames="chosenDrinkNames"
-        v-model:unchosenDrinkNames="unchosenDrinkNames" 
+        v-model:chosenDrinks="chosenDrinks"
+        v-model:unchosenDrinks="unchosenDrinks" 
         :serverUrl="SERVER_URL"
         @done="questionsDone"
         @reopened="questionsReopened"
@@ -151,10 +151,10 @@ const fetchDrinksInfo = function(drinks) {
   return _fetch(`${SERVER_URL}/drinks/info`, options)
 }
 
-const fetchDrinks = function(chosenDrinkNames, unchosenDrinkNames, availableIngredientNames, unavailableIngredientNames) {
+const fetchDrinks = function(chosenDrinks, unchosenDrinks, availableIngredientNames, unavailableIngredientNames) {
   const options = {
     method: 'POST',
-    body: JSON.stringify({ chosenDrinkNames, unchosenDrinkNames, availableIngredientNames, unavailableIngredientNames})
+    body: JSON.stringify({ chosenDrinks, unchosenDrinks, availableIngredientNames, unavailableIngredientNames})
   }
   return _fetch(`${SERVER_URL}/drinks/drinks`, options)
 }
@@ -169,8 +169,8 @@ export default {
   data() {
     return {
       /* user inputs */
-      chosenDrinkNames: [],
-      unchosenDrinkNames: [],
+      chosenDrinks: [],
+      unchosenDrinks: [],
       allAvailableIngredients: [],
       allUnavailableIngredients: [],
 
@@ -190,7 +190,7 @@ export default {
   computed: {
     uncheckedIngredients() {
       return _.chain(this.drinks)
-        .map(drink => drink.reciepe)
+        .map(drink => drink.recipe)
         .flatten()
         .map(ingredient => ingredient.ingredient)
         .filter(ingredientName => !this.allAvailableIngredients.includes(ingredientName) && !this.allUnavailableIngredients.includes(ingredientName))
@@ -255,8 +255,8 @@ export default {
     },
     questionsReopened() {
       this.pageState = 'questions'
-      this.chosenDrinkNames = []
-      this.unchosenDrinkNames = []
+      this.chosenDrinks = []
+      this.unchosenDrinks = []
     },
     ingredientsDone({ _availableIngredients, _unavailableIngredients }) {
 
@@ -274,7 +274,7 @@ export default {
     loadDrinks() {
       this.pageState = 'ingredients'
       this.loadingDrinks = true
-      fetchDrinks(this.chosenDrinkNames, this.unchosenDrinkNames, this.allAvailableIngredients, this.allUnavailableIngredients)
+      fetchDrinks(this.chosenDrinks, this.unchosenDrinks, this.allAvailableIngredients, this.allUnavailableIngredients)
         .then(response => {
           this.drinks = response.drinks
           this.loadingDrinks = false
@@ -282,8 +282,8 @@ export default {
         })
     },
     restart() {
-      this.chosenDrinkNames = []
-      this.unchosenDrinkNames = []
+      this.chosenDrinks = []
+      this.unchosenDrinks = []
       this.drinks = []
       this.pageState = 'questions'
     },

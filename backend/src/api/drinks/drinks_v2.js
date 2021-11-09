@@ -7,9 +7,11 @@ const _ = require('lodash')
 const backendUtils = require('../../../utils/utils')
 const drinkUtils = require('./utils')
 
-const CHOICE_COUNT = 3      // number of choices returned by getQuestion
-const DRINK_COUNT = 3       // number of drinks returned by getDrinks
-const GROUPING_SIZE = 1     // size of window of best scoing drinks to chose randomly from 
+const CHOICE_COUNT = 3                // number of choices returned by getQuestion
+const MIN_DISPLAY_RECIPE_LENGTH = 2   // min number of ingredients in the partial displayed recipe
+const MAX_DISPLAY_RECIPE_LENGTH = 3   // max number of ingredients in the partial displayed recipe
+const DRINK_COUNT = 3                 // number of drinks returned by getDrinks
+const GROUPING_SIZE = 1               // size of window of best scoing drinks to chose randomly from 
 
 const parseInputs = function(allIngredientsMap, allDrinksMap, chosenDrinks, unchosenDrinks, availableIngredientNames=[], unavailableIngredientNames=[]) {
   let availableIngredients, unavailableIngredients, parseError
@@ -46,7 +48,10 @@ const parseInputs = function(allIngredientsMap, allDrinksMap, chosenDrinks, unch
 const generateDisplayRecipe = function(allDrinksMap) {
   const _allDrinksMap = _.cloneDeep(allDrinksMap)
   _.forEach(_allDrinksMap, (drinkInfo) => {
-    drinkInfo.displayRecipe = drinkInfo.recipe
+    drinkInfo.displayRecipe = _.sortBy(drinkInfo.recipe, ingredient => {
+      if (['base_spirit'].includes(ingredient.ingredient_info.category)) return 0
+      else return _.random(0.01, 1)
+    }).slice(0, _.random(MIN_DISPLAY_RECIPE_LENGTH, MAX_DISPLAY_RECIPE_LENGTH))
   })
   return _allDrinksMap
 }

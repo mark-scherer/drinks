@@ -40,7 +40,7 @@
 
         <div class="ingredient-details">
           <ul>
-            <li v-for="ingredient_info in sortIngredients(drink_info.reciepe)" :key="ingredient_info.ingredient" class="ingredient-instructions" 
+            <li v-for="ingredient_info in sortIngredients(drink_info.recipe)" :key="ingredient_info.ingredient" class="ingredient-instructions" 
               v-html="ingredient_detail(ingredient_info)"
             ></li>
           </ul>

@@ -92,8 +92,8 @@ export default {
       handler(val) {
         // update all ingredients
         this.all_ingredients = _.chain(val)
-          .map('reciepe')
-          .flatten() // combine all drinks' reciepes into one list
+          .map('recipe')
+          .flatten() // combine all drinks' recipes into one list
           .map(ingredient => {
             const premods_str = _.map(ingredient.premods, mod => utils.desanitize(mod)).join(' ')
             const postmods_str = _.map(ingredient.postmods, mod => utils.desanitize(mod)).join(' ')

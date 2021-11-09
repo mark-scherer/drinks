@@ -64,15 +64,15 @@ export default {
   props: {
 
     /* outputs */
-    chosenDrinkNames: {
+    chosenDrinks: {
       type: Array,
       required: true,
-      description: 'two-way bound list of drink names selected by the user in question rounds'
+      description: 'two-way bound list of full drink objects selected by the user in question rounds'
     },
-    unchosenDrinkNames: {
+    unchosenDrinks: {
       type: Array,
       required: true,
-      description: 'two-way bound list of drink names not selected by the user in question rounds'
+      description: 'two-way bound list of full drink objects not selected by the user in question rounds'
     },
 
     /* misc settings */
@@ -82,7 +82,7 @@ export default {
       description: 'base url of server'
     }
   },
-  emits: ['update:chosenDrinkNames', 'update:unchosenDrinkNames', 'done'],
+  emits: ['update:chosenDrinks', 'update:unchosenDrinks', 'done'],
   data() {
     return {
       /* class vars */
@@ -106,30 +106,30 @@ export default {
       const _choices = _.cloneDeep(this.choices)
 
       // updating two-way bound vars takes time, don't want to wait so we pass updated values directly into this.getNextQuestion()
-      let _chosenDrinkNames, _unchosenDrinkNames
+      let _chosenDrinks, _unchosenDrinks
 
       // if no index, picked 'none of the above'
       if (index !== null && index !== undefined) {
-        _chosenDrinkNames = this.chosenDrinkNames.concat([ this.choices[index].drink ])
-        this.$emit('update:chosenDrinkNames', _chosenDrinkNames)
+        _chosenDrinks = this.chosenDrinks.concat([ this.choices[index] ])
+        this.$emit('update:chosenDrinks', _chosenDrinks)
         _choices.splice(index, 1)
       }
       
-      _unchosenDrinkNames = this.unchosenDrinkNames.concat(_.map(_choices, 'drink'))
-      this.$emit('update:unchosenDrinkNames', _unchosenDrinkNames)
+      _unchosenDrinks = this.unchosenDrinks.concat(_choices)
+      this.$emit('update:unchosenDrinks', _unchosenDrinks)
       
-      if (this.questionCount < TOTAL_QUESTIONS) this.getNextQuestion(_chosenDrinkNames, _unchosenDrinkNames)
+      if (this.questionCount < TOTAL_QUESTIONS) this.getNextQuestion(_chosenDrinks, _unchosenDrinks)
       else this.$emit('done')
     },
 
     // get next question from server
-      // _chosenDrinkNames, _unchosenDrinkNames allows caller to override use of this.chosenDrinkNames, this.unchosenDrinkNames to prevent having to wait for them to update asynchornously
-    async getNextQuestion(_chosenDrinkNames, _unchosenDrinkNames) {
+      // _chosenDrinks, _unchosenDrinks allows caller to override use of this.chosenDrinks, this.unchosenDrinks to prevent having to wait for them to update asynchornously
+    async getNextQuestion(_chosenDrinks, _unchosenDrinks) {
       this.loadingQuestion = true
 
       const body = JSON.stringify({
-        chosenDrinkNames: _chosenDrinkNames || this.chosenDrinkNames,
-        unchosenDrinkNames: _unchosenDrinkNames || this.unchosenDrinkNames
+        chosenDrinks: _chosenDrinks || this.chosenDrinks,
+        unchosenDrinks: _unchosenDrinks || this.unchosenDrinks
       })
 
       let fullQuestionResponse, questionResponse
@@ -143,8 +143,8 @@ export default {
           })
       } catch (getQuestionError) {
         console.error(`Error: getNextQuestion: error getting question from server: ${JSON.stringify({ 
-          chosenDrinkNames: this.chosenDrinkNames, 
-          unchosenDrinkNames: this.unchosenDrinkNames,
+          chosenDrinks: this.chosenDrinks, 
+          unchosenDrinks: this.unchosenDrinks,
           getQuestionError: String(getQuestionError)
         })}`)
         return
@@ -152,16 +152,16 @@ export default {
 
       if (fullQuestionResponse.status !== 200) {
         console.error(`Error: getNextQuestion: error in server response: ${JSON.stringify({ 
-          chosenDrinkNames: this.chosenDrinkNames, 
-          unchosenDrinkNames: this.unchosenDrinkNames,
+          chosenDrinks: this.chosenDrinks, 
+          unchosenDrinks: this.unchosenDrinks,
           questionResponse
         })}`)
         return
       }
 
       console.log(`getNextQuestion: got new questions: ${JSON.stringify({ 
-        chosenDrinkNames: this.chosenDrinkNames, 
-        unchosenDrinkNames: this.unchosenDrinkNames,
+        chosenDrinks: this.chosenDrinks, 
+        unchosenDrinks: this.unchosenDrinks,
         questionResponse
       })}`)
 
@@ -174,7 +174,7 @@ export default {
       return _.shuffle(RECEIPE_QUESTIONS)[0]
     },
     formatChoice(choice) {
-      return _.chain(choice.reciepe)
+      return _.chain(choice.displayRecipe)
         .sortBy(ingredientInfo => {
           const category = ingredientInfo.ingredient_info.category
           const precedence = INGREDIENT_PRECEDENCE.indexOf(category)
