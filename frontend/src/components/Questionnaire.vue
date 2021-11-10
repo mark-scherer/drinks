@@ -24,6 +24,7 @@
     </div>
 
     <div class="loading-placeholder question-block-placeholder" v-if="loadingQuestion">
+      <img class="icon icon-big loading-spinner" src="../assets/spinner_logo.png"/>
       <div>loading next question...</div>
     </div>
 

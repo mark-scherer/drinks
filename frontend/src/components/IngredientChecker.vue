@@ -27,6 +27,7 @@
 
     <!-- content when loading -->
     <div v-if="loadingDrinks" class="loading-placeholder">
+      <img class="icon icon-big loading-spinner" src="../assets/spinner_logo.png"/>
       loading drinks ...
     </div>
 

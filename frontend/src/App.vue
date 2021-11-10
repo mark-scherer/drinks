@@ -470,12 +470,45 @@ export default {
   .heading-font {
     font-family: "Playfair Display";
   }
+
   .loading-placeholder {
-    background: #cfcfcf;
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
+
+    transition: height 0.5s ease;
+
+    img {
+      margin: 10px;
+    }
   }
+  .loading-spinner {
+    animation-duration: 5s;
+    animation-name: spinloader;
+    animation-iteration-count: infinite;
+  }
+  @keyframes spinloader {
+    0% {
+      transform: rotate(0deg);
+    }
+    15% {
+      transform: rotate(360deg);
+    }
+    25% {
+      transform: translate(0%, 0%);
+    }
+    28% {
+      transform: translate(6%, -18%);
+    }
+    31% {
+      transform: translate(-6%, 18%);
+    }
+    34% {
+      transform: translate(0%, 0%);
+    }
+  }
+  
   .mod {
     color: red;
   }
