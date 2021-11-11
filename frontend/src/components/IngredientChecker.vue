@@ -4,7 +4,7 @@
   <div class="section">
 
     <!-- content when not loading -->
-    <form v-if="!loadingDrinks"> 
+    <form class="ingredient-checker"> 
       <div class="section-header">
         <div>Missing any of these ingredients?</div>
       </div> 
@@ -26,10 +26,10 @@
     </form>
 
     <!-- content when loading -->
-    <div v-if="loadingDrinks" class="loading-placeholder">
+    <!-- <div v-if="loadingDrinks" class="loading-placeholder">
       <img class="icon icon-big loading-spinner" src="../assets/spinner_logo.png"/>
       loading drinks ...
-    </div>
+    </div> -->
 
   </div>
 </template>
@@ -114,11 +114,23 @@ export default {
 </script>
 
 <style scoped>
+.ingredient-checker {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.section-header {
+  flex-shrink: 0;
+}
 .section-body {
   display: inline-block;
   margin: 15px;
+  overflow: scroll;
 }
 .section-footer {
+  flex-shrink: 0;
   display: flex;
   flex-direction: row;
   justify-content: space-evenly;

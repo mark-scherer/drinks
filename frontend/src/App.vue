@@ -1,18 +1,27 @@
 <template>
-  <div>
+  <div class="page">
 
-    <div class="page">
+    <!-- navbar -->
+      <!-- inside page so logo and page contents aligned -->
+    <div class="navbar">
+      <div class="logo heading-font">SpinTheShaker</div>
+    </div>
 
-      <!-- navbar -->
-        <!-- inside page so logo and page contents aligned -->
-      <div class="navbar">
-        <div class="logo heading-font">SpinTheShaker</div>
-      </div>
+    <div class="content">
+      
+      <Questionnaire 
+        :class="{hidden: pageState !== 'questions'}"
+        v-model:chosenDrinks="chosenDrinks"
+        v-model:unchosenDrinks="unchosenDrinks" 
+        :serverUrl="SERVER_URL"
+        @done="questionsDone"
+        @reopened="questionsReopened"
+      />
 
       <!-- collapsed controls sections -->
-      <div v-if="pageState !== 'questions'" class="section controls">
+      <div class="section controls" :class="{hidden: pageState === 'questions'}">
         <div 
-          class="button naked-button"
+          class="button naked-button restart-button"
           @click="restart()"
         >Start Over</div>
         <div 
@@ -22,18 +31,14 @@
         >{{resetIngredientsMessage}}</div>
       </div>
 
-      <Questionnaire 
-        v-if="pageState === 'questions'"
-        v-model:chosenDrinks="chosenDrinks"
-        v-model:unchosenDrinks="unchosenDrinks" 
-        :serverUrl="SERVER_URL"
-        @done="questionsDone"
-        @reopened="questionsReopened"
-      />
+      <!-- drinks loading section -->
+      <div class="section loading-placeholder" :class="{hidden: !loadingDrinks}">
+        <img class="icon icon-big loading-spinner" src="./assets/spinner_logo.png"/>
+        loading drinks ...
+      </div>
 
       <IngredientChecker
-        v-if="pageState === 'ingredients'"
-        :loadingDrinks="loadingDrinks"
+        :class="{hidden: pageState !== 'ingredients' || loadingDrinks}"
         :ingredientsToCheck="uncheckedIngredients"
         :knownAvailableIngredients="allAvailableIngredients.length"
         :knownUnavailableIngredients="allUnavailableIngredients.length"
@@ -304,14 +309,53 @@ export default {
   @import 'incl/_variables.scss';
   @import url('https://fonts.googleapis.com/css?family=Open+Sans');
 
-  /* app-wide formatting */
+  /* formatting */
+  html, body, #app, .page {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+  $page-padding: 15px;
   .page {
     margin: 0 auto;
-    max-width: 50%;
+    padding: $page-padding;
+    max-width: 600px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: stretch;
   }
+  $navbar-height: 60px;
+  $navbar-padding-bottom: 10px;
+  $navbar-margin-bottom: 0px;
+  .navbar {
+    height: $navbar-height;
+    padding-bottom: $navbar-padding-bottom;
+    margin-bottom: $navbar-margin-bottom;
+    flex-shrink: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .content {
+    height: calc(100% - (#{$navbar-height} + #{$navbar-padding-bottom} + #{$navbar-margin-bottom} + 2*#{$page-padding}));
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+
+    > div {
+      overflow: scroll;
+
+      &.hidden {
+        display: none;
+      }
+    }
+  }
+  $section-border: 1px solid black;
   .section {
-    border: 1px solid black;
-    margin: 0 auto 20px;
+    border: $section-border;
+    margin-bottom: 20px;
     padding: 20px;
   }
 
@@ -330,31 +374,18 @@ export default {
     height: 1em;
   }
 
-  /* navbar */
-  .navbar {
-    height: 60px;
-    padding: 40px 0 10px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  .logo {
-    color: $color-dark-primary;
-    font-size: xx-large;
-    font-weight: 600;
-  }
-
   /* controls section */
   .controls {
+    flex-shrink: 0;
     display: flex;
     flex-direction: row;
+    align-items: center;
   }
   .controls .button {
     width: 100%;
   }
-  .reset-button {
-    white-space: nowrap;
-    flex-grow: 2;
+  .restart-button {
+    flex-shrink: 2;
   }
 
   /* input section */
@@ -427,39 +458,39 @@ export default {
   }
 
   /* ingredient category styling */
-  .base-spirit {
-    background: $color-base-spirit !important;
-  }
-  .other-spirit {
-    background: $color-other-spirit !important;
-  }
-  .wine-beer {
-    background: $color-wine-beer !important;
-  }
-  .liqueur-cordial {
-    background: $color-liqueur-cordial !important;
-  }
-  .mixer {
-    background: $color-mixer !important;
-  }
-  .fruit-juice {
-    background: $color-fruit-juice !important;
-  }
-  .flavoring-syrup {
-    background: $color-flavoring-syrup !important;
-  }
-  .herb-spice {
-    background: $color-herb-spice !important;
-  }
-  .garnish {
-    background: $color-garnish !important;
-  }
-  .other-unknown {
-    background: $color-other-unknown !important;
-  }
-  .group {
-    background: $color-group !important;
-  }
+  // .base-spirit {
+  //   background: $color-base-spirit !important;
+  // }
+  // .other-spirit {
+  //   background: $color-other-spirit !important;
+  // }
+  // .wine-beer {
+  //   background: $color-wine-beer !important;
+  // }
+  // .liqueur-cordial {
+  //   background: $color-liqueur-cordial !important;
+  // }
+  // .mixer {
+  //   background: $color-mixer !important;
+  // }
+  // .fruit-juice {
+  //   background: $color-fruit-juice !important;
+  // }
+  // .flavoring-syrup {
+  //   background: $color-flavoring-syrup !important;
+  // }
+  // .herb-spice {
+  //   background: $color-herb-spice !important;
+  // }
+  // .garnish {
+  //   background: $color-garnish !important;
+  // }
+  // .other-unknown {
+  //   background: $color-other-unknown !important;
+  // }
+  // .group {
+  //   background: $color-group !important;
+  // }
 
   /* misc other app-wide styling */
   #app {
@@ -470,6 +501,11 @@ export default {
   .heading-font {
     font-family: "Playfair Display";
   }
+  .logo {
+    color: $color-dark-primary;
+    font-size: xx-large;
+    font-weight: 600;
+  }
 
   .loading-placeholder {
     display: flex;
@@ -477,7 +513,7 @@ export default {
     justify-content: center;
     align-items: center;
 
-    transition: height 0.5s ease;
+    transition: height 0.25s ease;
 
     img {
       margin: 10px;
@@ -508,7 +544,7 @@ export default {
       transform: translate(0%, 0%);
     }
   }
-  
+
   .mod {
     color: red;
   }
