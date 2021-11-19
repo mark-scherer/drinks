@@ -457,6 +457,13 @@ export default {
       transform: scale(1);
   }
 
+  .bullet-point {
+    height: 4px;
+    width: 4px;
+    background: black;
+    margin-right: 10px;
+  }
+
   /* ingredient category styling */
   // .base-spirit {
   //   background: $color-base-spirit !important;
