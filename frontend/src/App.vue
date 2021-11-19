@@ -393,18 +393,28 @@ export default {
   /* input button styling */
   .button {
     cursor: pointer;
-    background: lightgray;
+    background: darkgray;
     margin: 5px;
     padding: 5px;
     -webkit-transition: all .2s;
       transition: all .2s;
+
+    &:hover {
+      background: dimgray;
+    }
+    &.selected {
+      background: dimgray;
+    }
+    &.disabled, &.disabled:hover {
+      background: Gainsboro;
+      color: gray;
+      cursor: unset;
+    }
   }
   .naked-button {
     background: none;
   }
-  .button:hover {
-    background: gray;
-  }
+
 
   /* checkbox styling */
   [type="checkbox"] {

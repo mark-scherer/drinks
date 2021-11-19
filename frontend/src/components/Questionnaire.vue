@@ -6,20 +6,26 @@
     <div class="heading heading-font">Let's find new drinks you'll love</div>
 
     <div class="question-block" v-if="!loadingQuestion">
-      <div class="subheading">{{formatQuestion()}}</div>
+      <div class="subheading">
+        <div>{{formatQuestion()}}</div>
+        <div class="question-counter-container">{{formattedCount}}</div>
+      </div>
       <div 
         v-for="(choice, index) in choices" :key="choice.drink" 
-        class="choice button"
+        class="choice button" :class="{selected: selectedIndex === index}"
         v-on:click="pickedChoice(index)"
       >
         <div>{{formatChoice(choice)}}</div>
       </div>
       <div class="footer">
         <div 
-          class="button naked-button"
-          v-on:click="pickedChoice()"
+          class="button naked-button" :class="{selected: selectedIndex === -1}"
+          v-on:click="pickedChoice(-1)"
         >None of these</div>
-        <div>Question {{formattedCount}}</div>
+        <div 
+          class="button submit-button" :class="{disabled: selectedIndex === null}"
+          v-on:click="clickedSubmit()"
+        >submit</div>
       </div>
     </div>
 
@@ -88,6 +94,7 @@ export default {
     return {
       /* class vars */
       choices: [],
+      selectedIndex: null,
       questionCount: 0,
 
       /* UI state vars */
@@ -104,21 +111,27 @@ export default {
   },
   methods: {
     pickedChoice(index) {
+      this.selectedIndex = index
+    },
+    clickedSubmit() {
+      if (this.selectedIndex === null || this.selectedIndex === undefined) throw Error(`Questionaire.clickedSubmit(): clicked submit without assigning this.selectedIndex`)
+      
       const _choices = _.cloneDeep(this.choices)
 
       // updating two-way bound vars takes time, don't want to wait so we pass updated values directly into this.getNextQuestion()
       let _chosenDrinks, _unchosenDrinks
 
       // if no index, picked 'none of the above'
-      if (index !== null && index !== undefined) {
-        _chosenDrinks = this.chosenDrinks.concat([ this.choices[index] ])
+      if (this.selectedIndex !== -1) {
+        _chosenDrinks = this.chosenDrinks.concat([ this.choices[this.selectedIndex] ])
         this.$emit('update:chosenDrinks', _chosenDrinks)
-        _choices.splice(index, 1)
+        _choices.splice(this.selectedIndex, 1)
       }
       
       _unchosenDrinks = this.unchosenDrinks.concat(_choices)
       this.$emit('update:unchosenDrinks', _unchosenDrinks)
       
+      this.selectedIndex = null
       if (this.questionCount < TOTAL_QUESTIONS) this.getNextQuestion(_chosenDrinks, _unchosenDrinks)
       else this.$emit('done')
     },
@@ -193,7 +206,7 @@ export default {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 
 .heading {
   font-size: larger;
@@ -204,12 +217,29 @@ export default {
 .subheading {
   font-size: medium;
   margin-bottom: 10px;
+  position: relative;
+}
+.question-counter-container {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+
+  div {
+    padding-left: 5px;
+    background: white;
+  }
 }
 .footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-top: 15px;
+}
+.submit-button {
+  padding: 5px 40px;
 }
 
 .question-block-placeholder {
