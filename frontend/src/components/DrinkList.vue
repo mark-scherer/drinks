@@ -6,7 +6,7 @@
       <div v-for="(drink, drinkIndex) in drinks" :key="drink.drink" class="drink-info" :style="drinkInfoStyling">
         <div class="drink-title">{{desanitize(drink.drink, {capitalize: true})}}</div>
         <div class="drink-content">
-          <div class=drink-rating>
+          <div v-if="drink.source_avg_rating !== null" class=drink-rating>
             <img v-for="(starSrc, starIndex) in drinkStarsMap[drinkIndex]" :key="starIndex" :src="starSrc">
           </div>
           <div class="drink-metadata">
