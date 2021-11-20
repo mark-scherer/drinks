@@ -21,15 +21,9 @@
       </div>
 
       <div class="section-footer">
-        <div class="button" @click="submitClicked">{{ submitMessage }}</div>
+        <div class="button naked-button" @click="submitClicked">{{ submitMessage }}</div>
       </div> 
     </form>
-
-    <!-- content when loading -->
-    <!-- <div v-if="loadingDrinks" class="loading-placeholder">
-      <img class="icon icon-big loading-spinner" src="../assets/spinner_logo.png"/>
-      loading drinks ...
-    </div> -->
 
   </div>
 </template>

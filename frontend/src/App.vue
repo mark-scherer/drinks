@@ -393,26 +393,29 @@ export default {
   /* input button styling */
   .button {
     cursor: pointer;
-    background: darkgray;
+    background: lightgray;
+    border: 1px solid black;
     margin: 5px;
-    padding: 5px;
+    padding: 5px 15px;
     -webkit-transition: all .2s;
       transition: all .2s;
 
     &:hover {
-      background: dimgray;
+      background: darkgray;
     }
     &.selected {
-      background: dimgray;
+      background: darkgray;
+      border: 2px solid black;
     }
     &.disabled, &.disabled:hover {
-      background: Gainsboro;
+      background: gainsboro;
       color: gray;
       cursor: unset;
+      border: none;
     }
   }
   .naked-button {
-    background: none;
+    border: none;
   }
 
 
