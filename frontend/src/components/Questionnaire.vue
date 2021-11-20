@@ -6,27 +6,47 @@
     <div class="heading heading-font">Let's find new drinks you'll love</div>
 
     <div class="question-block" v-if="!loadingQuestion">
+      
       <div class="subheading">
         <div>{{formatQuestion()}}</div>
         <div class="question-counter-container">{{formattedCount}}</div>
       </div>
+
       <div 
         v-for="(choice, index) in choices" :key="choice.drink" 
-        class="choice button" :class="{selected: selectedIndex === index}"
-        v-on:click="pickedChoice(index)"
+        class="choice-container button" :class="{selected: selectedIndex === index}"
+        @click="pickedChoice(index)"
       >
-        <div>{{formatChoice(choice)}}</div>
+        
+        <div class="choice">
+          <div class="choice-title">{{formatChoice(choice)}}</div>
+          <div v-if="choice.expanded" class="choice-body">
+            <div v-for="ingredient in orderedDisplayRecipe(choice)" :key="ingredient.ingredient" class="ingredient-info">
+              <div class="ingredient-name">{{desanitize(ingredient.ingredient, true)}}:</div> 
+              <div>{{formatIngredientHelp(ingredient)}}</div>
+            </div>
+          </div>
+        </div>
+
+        <img 
+          class= "icon icon-small choice-help" :class="{expanded: choice.expanded}"
+          src="https://img.icons8.com/ios-glyphs/30/000000/question-mark.png"
+          @click.stop="clickedHelp(index)"
+        />
+
       </div>
+
       <div class="footer">
         <div 
           class="button naked-button" :class="{selected: selectedIndex === -1}"
           v-on:click="pickedChoice(-1)"
         >None of these</div>
         <div 
-          class="button submit-button" :class="{disabled: selectedIndex === null}"
+          class="button naked-button submit-button" :class="{disabled: selectedIndex === null}"
           v-on:click="clickedSubmit()"
         >submit</div>
       </div>
+
     </div>
 
     <div class="loading-placeholder question-block-placeholder" v-if="loadingQuestion">
@@ -110,6 +130,13 @@ export default {
     }
   },
   methods: {
+    clickedHelp(index) {
+      const originalState = this.choices[index].expanded
+      // _.forEach(this.choices, choice => {
+      //   choice.expanded = false
+      // })
+      this.choices[index].expanded = !originalState
+    },
     pickedChoice(index) {
       this.selectedIndex = index
     },
@@ -184,20 +211,34 @@ export default {
       this.loadingQuestion = false
     },
 
-    formatQuestion() {
-      return _.shuffle(RECEIPE_QUESTIONS)[0]
-    },
-    formatChoice(choice) {
-      return _.chain(choice.displayRecipe)
+    orderedDisplayRecipe(ingredient) {
+      return _.chain(ingredient.displayRecipe)
         .sortBy(ingredientInfo => {
           const category = ingredientInfo.ingredient_info.category
           const precedence = INGREDIENT_PRECEDENCE.indexOf(category)
           if (precedence < 0) throw Error(`Questionnire.formatChoice: did not know how to sort ingredient: ${JSON.stringify({ category })}`)
           return precedence
         })
+    },
+
+    desanitize(input, capitalize=false) {
+      return desanitize(input, { capitalize })
+    },
+    formatQuestion() {
+      return _.shuffle(RECEIPE_QUESTIONS)[0]
+    },
+    formatChoice(choice) {
+      return _.chain(this.orderedDisplayRecipe(choice)) 
         .map(ingredientInfo => desanitize(ingredientInfo.ingredient))
         .value()
         .join(', ')
+    },
+    formatIngredientHelp(ingredient) {
+      let help
+      if (ingredient.ingredient_info.related && ingredient.ingredient_info.related.length) help = `similar to ${_.map(ingredient.ingredient_info.related, desanitize).slice(0, 3).join(', ')}`
+      else help = desanitize(ingredient.ingredient_info.category)
+      // return `${desanitize(ingredient.ingredient)}: ${help}`
+      return help
     }
   },
   mounted() {
@@ -232,6 +273,46 @@ export default {
     background: white;
   }
 }
+
+.choice-container {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+.choice {
+  flex-grow: 1;
+}
+.choice-body {
+  font-size: small;
+  display: flex;
+  flex-direction: column;
+  align-items: baseline;
+  margin: 5px 0 0;
+}
+.choice-help {
+  margin-right: -5px;
+  border-radius: 15px;
+  padding: 5px;
+
+  &:hover {
+    background: white;
+  }
+  &.expanded {
+    background: white;
+  }
+}
+.ingredient-info {
+  margin: 1px 0;
+  
+  div {
+    display: inline;
+  }
+}
+.ingredient-name {
+  text-decoration: underline;
+  margin-right: 4px;
+}
+
 .footer {
   display: flex;
   justify-content: space-between;
