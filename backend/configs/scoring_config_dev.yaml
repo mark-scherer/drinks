@@ -1,0 +1,55 @@
+
+# --- intrensic scoring params --- #
+
+# weights of factors when generating intrensive score
+intrensicWeights:
+  drinkRating: 1
+  drinkRatingCount: 0.5
+  drinkCategory: 0.5
+  glass: 0.5
+  hasComments: 0.25
+  hasGlass: 0.25
+
+# drink ratings will be clamped to this range
+drinkRatingRangeMin: 0  
+drinkRatingRangeMax: 10
+
+# drink rating counts will be clamped to this range
+drinkRatingCountRangeMin: 0  
+drinkRatingCountRangeMax: 10000
+
+# hierarchy values are linearly relative to each other, greater being better
+  # current strategy: 1-5 scale, 3 is neutral
+drinkCategoryHierarchy:
+  ordinary_drink: 5
+  cocktail: 5
+  homemade_liqueur: 4
+  other/unknown: 3
+  coffee_/_tea: 3
+  milk_/_float_/_shake: 3
+  soft_drink_/_soda: 2
+  beer: 2
+  cocoa: 2
+  punch_/_party_drink: 1
+  shot: 1
+
+# hierarchy values are linearly relative to each other, greater being better
+  # drinks with glass === null or a glass not specified here will be given the mean hierarchy
+  # current strategy: 1-5 scale, 3 is neutral
+glassHierarchy:
+  cocktail_glass: 5
+  highball_glass: 5
+  old_fashioned_glass: 5
+  collins_glass: 5
+  hurricane_glass: 5
+  whiskey_sour_glass: 5
+  sherry_glass: 4
+  mason_jar: 4
+  white_wine_glass: 2
+  red_wine_glass: 2
+  irish_coffee_cup: 2
+  beer_mug: 2
+  pint_glass: 2
+  punch_bowl: 1
+  shot_glass: 1
+  pitcher: 1

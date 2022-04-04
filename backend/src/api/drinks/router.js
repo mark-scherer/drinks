@@ -2,15 +2,22 @@
   drinks api router
 */
 
+const fs = require('fs')
+const path = require('path')
+
 const _ = require('lodash')
 const Router = require('@koa/router')
 const bodyParser = require('koa-bodyparser')
+const YAML = require('yaml')
 const drinksRouter = new Router({ prefix: '/drinks' })
 
 const backendUtils = require('../../../utils/utils')
 const drinkUtils = require('./utils')
 
-const { getQuestion, getDrinks } = require('./drinks_v2')
+const { getQuestion, getDrinks } = require('./drinks_v3')
+
+// should make this an arg or something
+SCORING_CONFIG_PATH = path.join(__dirname, '../../../configs/scoring_config_dev.yaml')
 
 // get all ingredients, drinks at startup
 let allIngredientsMap = {}, allDrinksMap = {}, routerStart = Date.now()
@@ -31,6 +38,9 @@ backendUtils.allDrinks()
     throw Error(`drinks router: error retrieving allDrinks: ${err}`)
   })
 
+// load scoring config at startup
+const scoringConfig = YAML.parse(fs.readFileSync(SCORING_CONFIG_PATH, 'utf8'))
+
 const parseInputs = function(ctx) {
   return {
     chosenDrinks: ctx.request.body.chosenDrinks || [],
@@ -43,12 +53,7 @@ const parseInputs = function(ctx) {
 drinksRouter.use(bodyParser({ enableTypes: ['json', 'text'] }))
 drinksRouter.use(async (ctx, next) => {
   const start = Date.now()
-  ctx.request.body = JSON.parse(ctx.request.body)
-  console.log(`${ctx.method}: ${ctx.path}: got request: ${JSON.stringify({ requestBody: {
-    ...ctx.request.body,
-    chosenDrinks: _.map(ctx.request.body.chosenDrinks, 'drink'),
-    unchosenDrinks: _.map(ctx.request.body.unchosenDrinks, 'drink')
-  } })}`)
+  console.log(`${ctx.method}: ${ctx.path}: got request: ${JSON.stringify({ requestBody: ctx.request.body })}`)
 
   try {
     await next()
@@ -64,8 +69,7 @@ drinksRouter.use(async (ctx, next) => {
 // POST /drinks/question
   // post so can send body
 drinksRouter.post('/question', async (ctx, next) => {
-  const { chosenDrinks, unchosenDrinks } = parseInputs(ctx)
-  ctx.body = await getQuestion(allDrinksMap, chosenDrinks, unchosenDrinks)
+  ctx.body = await getQuestion(allDrinksMap, scoringConfig, ctx.request.body.prevQuestionData)
 })
 
 // POST /drinks/drinks
