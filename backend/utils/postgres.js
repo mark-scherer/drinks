@@ -1,5 +1,6 @@
 'use strict'
 
+const fs        = require('fs')
 const { Pool }  = require('pg')
 const named     = require('yesql').pg
 const _         = require('lodash')
@@ -8,6 +9,13 @@ let pools = {}
 
 const connect = function(config, name='default') {
   if (pools[name]) return
+
+  if (config.ca) {
+    config.ssl = {
+      ca: fs.readFileSync(config.ca).toString()
+    }
+  }
+
   pools[name] = new Pool(config)
   pools[name].on('error', (err, client) => {
     console.error(`Postgres util: unexpected error on idle client ${name}: ${err}`)
