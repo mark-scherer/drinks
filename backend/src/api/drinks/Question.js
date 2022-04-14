@@ -62,7 +62,7 @@ class Question {
   constructor(data={}, deserialized=false) {
     
     // validate input data
-    const requiredFields = this._getRequiredFields(deserialized)
+    const requiredFields = this._getRequiredFields(deserialized ? 'answered' : 'input')
     const validationError = this._validateData(data, requiredFields)
     if (validationError) throw Error(`${this.constructor.name} constructor: cannot ${deserialized ? 'deserialize' : 'create'} object: ${validationError}`)
 
@@ -96,25 +96,45 @@ class Question {
     Combines required params from base and child classes.
 
     Inputs:
-      isOutput  : if true returns required question output fields (a finalized question), otherwise returns required question input fields (for generating a question)
+      questionStage  : 
+        input     : returns fields required to create question
+        output    : returns fields required to output unanswered question
+        answered  : returns fields required to serialized previously answered question
   */
-  _getRequiredFields(isOutput) {
+  _getRequiredFields(questionStage) {
     const childClassName = this.constructor.name
     const childClass = Question.QUESTION_CLASSES[childClassName]
     
     let baseParams, childParams
-    if (isOutput) {
-      baseParams = Question.BASE_REQUIRED_INPUT_DATA.concat(Question.BASE_REQUIRED_OUTPUT_DATA)
-      childParams = childClass.REQUIRED_INPUT_DATA.concat(childClass.REQUIRED_OUTPUT_DATA)
-    } else {
+    if (questionStage === 'answered') {
+      baseParams = [].concat([
+        Question.BASE_REQUIRED_INPUT_DATA,
+        Question.BASE_REQUIRED_OUTPUT_DATA,
+        Question.BASED_REQUIRED_ANSWERED_DATA
+      ])
+      childParams = [].concat([
+        childClass.REQUIRED_INPUT_DATA,
+        childClass.REQUIRED_OUTPUT_DATA,
+        childClass.BASED_REQUIRED_ANSWERED_DATA
+      ])
+    } else if (questionStage === 'output') {
+      baseParams = [].concat([
+        Question.BASE_REQUIRED_INPUT_DATA,
+        Question.BASE_REQUIRED_OUTPUT_DATA
+      ])
+      childParams = [].concat([
+        childClass.REQUIRED_INPUT_DATA,
+        childClass.REQUIRED_OUTPUT_DATA
+      ])
+    } else if (questionStage === 'input') {
       baseParams = Question.BASE_REQUIRED_INPUT_DATA
       childParams = childClass.REQUIRED_INPUT_DATA
-    }
+    } else throw Error(`_getRequiredFields(): unsupported value for questionStage: ${questionStage}`)
 
     if (childParams === null || childParams === undefined) 
-      throw Error(`${childClassName}.${deserialized ? 'REQUIRED_OUTPUT_DATA' : 'REQUIRED_INPUT_DATA'} is null, must implement!`)
+      throw Error(`required outputs for ${questionStage} questions missing for ${childClassName}, must implement!`)
 
-    return baseParams.concat(childParams)
+    return _.flattenDeep(baseParams.concat(childParams))
   }
 
   /*
@@ -125,14 +145,15 @@ class Question {
     
     // fields to omit from serialization
     const INTERNAL_FIELDS = [
-      '_bodyGenerated'
+      '_bodyGenerated',
+
     ]
 
     if (!this._bodyGenerated) throw Error(`cannot serialize question without body!`)
 
-    const requiredOutputData = this._getRequiredFields(true)
+    const requiredOutputData = this._getRequiredFields('output')
     const validationError = this._validateData(this, requiredOutputData)
-    if (validationError) throw Error(`${this.constructor.name}.serialize: cannot serialize: ${validationError}`)
+    if (validationError) throw Error(`${this.constructor.name}.serialize: cannot serialize: ${JSON.stringify({ validationError, requiredOutputData })}`)
 
     return {
       type: this.constructor.name,
@@ -146,7 +167,9 @@ class Question {
   */
   summary() {
     return {
-      type: this.type
+      type: this.type,
+      choices: _.map(this.choices, 'choiceText'),
+      selectedIndex: this.selectedIndex
     }
   }
 
@@ -180,6 +203,9 @@ Question.BASE_REQUIRED_INPUT_DATA = [
 Question.BASE_REQUIRED_OUTPUT_DATA = [
   'questionText',
   'choices'
+]
+Question.BASED_REQUIRED_ANSWERED_DATA = [
+  'selectedIndex'
 ]
 
 
@@ -253,14 +279,15 @@ class IngredientGroupQuestion extends Question {
     Score a possible drink choice.
 
     Inputs:
-      drink   : drink object to score
+      drink           : drink object to score
       scoringConfig   : scoring object
+      otherDrinks     : list of [{otherDrinkInfo, similarityCoef}] to apply to drink object to score
 
     Returns: 
       score             : 0-1 score, 1 being the best match
       scoreDiagnostic   : diagnostic object for drink score
   */
-  _scorePossibleDrink(drink, scoringConfig) {
+  _scorePossibleDrink(drink, scoringConfig, otherDrinks) {
     
     // start with intrinsic drink characteristics
     const { 

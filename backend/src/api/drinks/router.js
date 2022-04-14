@@ -53,6 +53,7 @@ const parseInputs = function(ctx) {
 drinksRouter.use(bodyParser({ enableTypes: ['json', 'text'] }))
 drinksRouter.use(async (ctx, next) => {
   const start = Date.now()
+  if (ctx.request.body) ctx.request.body = JSON.parse(ctx.request.body) // for some reason koa-bodyParser doesn't do this
   console.log(`${ctx.method}: ${ctx.path}: got request: ${JSON.stringify({ requestBody: ctx.request.body })}`)
 
   try {
@@ -69,7 +70,7 @@ drinksRouter.use(async (ctx, next) => {
 // POST /drinks/question
   // post so can send body
 drinksRouter.post('/question', async (ctx, next) => {
-  ctx.body = await getQuestion(allDrinksMap, scoringConfig, ctx.request.body.prevQuestionData)
+  ctx.body = await getQuestion(allDrinksMap, scoringConfig, ctx.request.body.prevQuestions)
 })
 
 // POST /drinks/drinks

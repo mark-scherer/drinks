@@ -5,21 +5,21 @@
 
     <div class="heading heading-font">Let's find new drinks you'll love</div>
 
-    <div class="question-block" v-if="!loadingQuestion">
+    <div class="question-block" v-if="question && !loadingQuestion">
       
       <div class="subheading">
-        <div>{{formatQuestion()}}</div>
+        <div>{{question.questionText}}</div>
         <div class="question-counter-container">{{formattedCount}}</div>
       </div>
 
       <div 
-        v-for="(choice, index) in choices" :key="choice.drink" 
+        v-for="(choice, index) in question.choices" :key="choice.drink" 
         class="choice-container button" :class="{selected: selectedIndex === index}"
         @click="pickedChoice(index)"
       >
         
         <div class="choice">
-          <div class="choice-title">{{formatChoice(choice)}}</div>
+          <div class="choice-title">{{desanitize(choice.choiceText)}}</div>
           <div v-if="choice.expanded" class="choice-body">
             <div v-for="ingredient in orderedDisplayRecipe(choice)" :key="ingredient.ingredient" class="ingredient-info">
               <div class="ingredient-name">{{desanitize(ingredient.ingredient, true)}}:</div> 
@@ -65,41 +65,35 @@ const _ = require('lodash')
 const QUESTION_ENDPOINT = 'drinks/question'
 const TOTAL_QUESTIONS = 3
 
-const RECEIPE_QUESTIONS = [
-  'Which of these pairings sound best?',
-  'Which of these would you prefer?',
-  'Pick your favorite',
-  'What\'s your preference?',
-  'Any of these look interesting?'
-
-]
-const INGREDIENT_PRECEDENCE = [
-  'base_spirit',
-  'other_spirit',
-  'wine_/_beer',
-  'mixer',
-  'fruit_/_juice',
-  'liqueur_/_cordial',
-  'other_/_unknown',
-  'flavoring_/_syrup',
-  'herb_/_spice',
-  'garnish'
-]
+// const RECEIPE_QUESTIONS = [
+//   'Which of these pairings sound best?',
+//   'Which of these would you prefer?',
+//   'Pick your favorite',
+//   'What\'s your preference?',
+//   'Any of these look interesting?'
+// ]
+// const INGREDIENT_PRECEDENCE = [
+//   'base_spirit',
+//   'other_spirit',
+//   'wine_/_beer',
+//   'mixer',
+//   'fruit_/_juice',
+//   'liqueur_/_cordial',
+//   'other_/_unknown',
+//   'flavoring_/_syrup',
+//   'herb_/_spice',
+//   'garnish'
+// ]
 
 export default {
   name: 'Questionnaire',
   props: {
 
     /* outputs */
-    chosenDrinks: {
+    prevQuestions: {
       type: Array,
       required: true,
-      description: 'two-way bound list of full drink objects selected by the user in question rounds'
-    },
-    unchosenDrinks: {
-      type: Array,
-      required: true,
-      description: 'two-way bound list of full drink objects not selected by the user in question rounds'
+      description: 'two-way bound list of previously answered questions'
     },
 
     /* misc settings */
@@ -109,11 +103,14 @@ export default {
       description: 'base url of server'
     }
   },
-  emits: ['update:chosenDrinks', 'update:unchosenDrinks', 'done'],
+  emits: [
+    'update:prevQuestions',
+    'done'
+  ],
   data() {
     return {
       /* class vars */
-      choices: [],
+      question: null,
       selectedIndex: null,
       questionCount: 0,
 
@@ -131,46 +128,36 @@ export default {
   },
   methods: {
     clickedHelp(index) {
-      const originalState = this.choices[index].expanded
+      const originalState = this.question.choices[index].expanded
       // _.forEach(this.choices, choice => {
       //   choice.expanded = false
       // })
-      this.choices[index].expanded = !originalState
+      this.question.choices[index].expanded = !originalState
     },
     pickedChoice(index) {
       this.selectedIndex = index
     },
     clickedSubmit() {
       if (this.selectedIndex === null || this.selectedIndex === undefined) throw Error(`Questionaire.clickedSubmit(): clicked submit without assigning this.selectedIndex`)
-      
-      const _choices = _.cloneDeep(this.choices)
 
       // updating two-way bound vars takes time, don't want to wait so we pass updated values directly into this.getNextQuestion()
-      let _chosenDrinks, _unchosenDrinks
-
-      // if no index, picked 'none of the above'
-      if (this.selectedIndex !== -1) {
-        _chosenDrinks = this.chosenDrinks.concat([ this.choices[this.selectedIndex] ])
-        this.$emit('update:chosenDrinks', _chosenDrinks)
-        _choices.splice(this.selectedIndex, 1)
-      }
-      
-      _unchosenDrinks = this.unchosenDrinks.concat(_choices)
-      this.$emit('update:unchosenDrinks', _unchosenDrinks)
+      this.question.selectedIndex = this.selectedIndex
+      const _prevQuestions = this.prevQuestions.concat([ this.question ])
+      this.$emit('update:prevQuestions', _prevQuestions)
       
       this.selectedIndex = null
-      if (this.questionCount < TOTAL_QUESTIONS) this.getNextQuestion(_chosenDrinks, _unchosenDrinks)
+      if (this.questionCount < TOTAL_QUESTIONS) this.getNextQuestion(_prevQuestions)
       else this.$emit('done')
     },
 
     // get next question from server
-      // _chosenDrinks, _unchosenDrinks allows caller to override use of this.chosenDrinks, this.unchosenDrinks to prevent having to wait for them to update asynchornously
-    async getNextQuestion(_chosenDrinks, _unchosenDrinks) {
+      // _prevQuestions allows method caller to override use of this._prevQuestions to prevent having to wait for it to update asynchornously
+    async getNextQuestion(_prevQuestions) {
       this.loadingQuestion = true
+      if (!_prevQuestions) _prevQuestions = this.prevQuestions
 
       const body = JSON.stringify({
-        chosenDrinks: _chosenDrinks || this.chosenDrinks,
-        unchosenDrinks: _unchosenDrinks || this.unchosenDrinks
+        prevQuestions: _prevQuestions
       })
 
       let fullQuestionResponse, questionResponse
@@ -184,8 +171,7 @@ export default {
           })
       } catch (getQuestionError) {
         console.error(`Error: getNextQuestion: error getting question from server: ${JSON.stringify({ 
-          chosenDrinks: this.chosenDrinks, 
-          unchosenDrinks: this.unchosenDrinks,
+          _prevQuestions,
           getQuestionError: String(getQuestionError)
         })}`)
         return
@@ -193,46 +179,41 @@ export default {
 
       if (fullQuestionResponse.status !== 200) {
         console.error(`Error: getNextQuestion: error in server response: ${JSON.stringify({ 
-          chosenDrinks: this.chosenDrinks, 
-          unchosenDrinks: this.unchosenDrinks,
+          _prevQuestions,
           questionResponse
         })}`)
         return
       }
 
       console.log(`getNextQuestion: got new questions: ${JSON.stringify({ 
-        chosenDrinks: this.chosenDrinks, 
-        unchosenDrinks: this.unchosenDrinks,
+        _prevQuestions,
         questionResponse
       })}`)
 
-      this.choices = questionResponse.choices
+      this.question = questionResponse
       this.questionCount += 1
       this.loadingQuestion = false
     },
 
-    orderedDisplayRecipe(ingredient) {
-      return _.chain(ingredient.displayRecipe)
-        .sortBy(ingredientInfo => {
-          const category = ingredientInfo.ingredient_info.category
-          const precedence = INGREDIENT_PRECEDENCE.indexOf(category)
-          if (precedence < 0) throw Error(`Questionnire.formatChoice: did not know how to sort ingredient: ${JSON.stringify({ category })}`)
-          return precedence
-        })
-    },
+    // orderedDisplayRecipe(ingredient) {
+    //   return _.chain(ingredient.displayRecipe)
+    //     .sortBy(ingredientInfo => {
+    //       const category = ingredientInfo.ingredient_info.category
+    //       const precedence = INGREDIENT_PRECEDENCE.indexOf(category)
+    //       if (precedence < 0) throw Error(`Questionnire.formatChoice: did not know how to sort ingredient: ${JSON.stringify({ category })}`)
+    //       return precedence
+    //     })
+    // },
 
     desanitize(input, capitalize=false) {
       return desanitize(input, { capitalize })
     },
-    formatQuestion() {
-      return _.shuffle(RECEIPE_QUESTIONS)[0]
-    },
-    formatChoice(choice) {
-      return _.chain(this.orderedDisplayRecipe(choice)) 
-        .map(ingredientInfo => desanitize(ingredientInfo.ingredient))
-        .value()
-        .join(', ')
-    },
+    // formatChoice(choice) {
+    //   return _.chain(this.orderedDisplayRecipe(choice)) 
+    //     .map(ingredientInfo => desanitize(ingredientInfo.ingredient))
+    //     .value()
+    //     .join(', ')
+    // },
     formatIngredientHelp(ingredient) {
       let help
       if (ingredient.ingredient_info.related && ingredient.ingredient_info.related.length) help = `similar to ${_.map(ingredient.ingredient_info.related, desanitize).slice(0, 3).join(', ')}`

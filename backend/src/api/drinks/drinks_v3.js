@@ -41,14 +41,14 @@ const getQuestion = async function (
   prevQuestions = Question.parseQuestions(prevQuestionData)
   console.log(`getQuestion: generating next question: ${JSON.stringify({
     prevQuestions: Question.summarizeQuestions(prevQuestions),
-    scoringConfig
+    // scoringConfig
   })}`)
 
   const nextQuestionType = _pickQuestionType(prevQuestions)
   const nextQuestion = new Question.QUESTION_CLASSES[nextQuestionType]({ prevQuestions })
   const questionDiagnostic = nextQuestion.generateBody(allDrinksMap, scoringConfig)
   
-  return { ...nextQuestion.serialize(), questionDiagnostic }
+  return { ...nextQuestion.serialize() }
 }
 
 

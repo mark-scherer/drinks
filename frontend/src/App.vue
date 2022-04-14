@@ -11,8 +11,7 @@
       
       <Questionnaire 
         :class="{hidden: pageState !== 'questions'}"
-        v-model:chosenDrinks="chosenDrinks"
-        v-model:unchosenDrinks="unchosenDrinks" 
+        v-model:prevQuestions="prevQuestions"
         :serverUrl="SERVER_URL"
         @done="questionsDone"
         @reopened="questionsReopened"
@@ -156,10 +155,10 @@ const fetchDrinksInfo = function(drinks) {
   return _fetch(`${SERVER_URL}/drinks/info`, options)
 }
 
-const fetchDrinks = function(chosenDrinks, unchosenDrinks, availableIngredientNames, unavailableIngredientNames) {
+const fetchDrinks = function(prevQuestions, availableIngredientNames, unavailableIngredientNames) {
   const options = {
     method: 'POST',
-    body: JSON.stringify({ chosenDrinks, unchosenDrinks, availableIngredientNames, unavailableIngredientNames})
+    body: JSON.stringify({ prevQuestions, availableIngredientNames, unavailableIngredientNames})
   }
   return _fetch(`${SERVER_URL}/drinks/drinks`, options)
 }
@@ -174,8 +173,7 @@ export default {
   data() {
     return {
       /* user inputs */
-      chosenDrinks: [],
-      unchosenDrinks: [],
+      prevQuestions: [],
       allAvailableIngredients: [],
       allUnavailableIngredients: [],
 
@@ -260,8 +258,7 @@ export default {
     },
     questionsReopened() {
       this.pageState = 'questions'
-      this.chosenDrinks = []
-      this.unchosenDrinks = []
+      this.prevQuestions = []
     },
     ingredientsDone({ _availableIngredients, _unavailableIngredients }) {
 
@@ -279,7 +276,7 @@ export default {
     loadDrinks() {
       this.pageState = 'ingredients'
       this.loadingDrinks = true
-      fetchDrinks(this.chosenDrinks, this.unchosenDrinks, this.allAvailableIngredients, this.allUnavailableIngredients)
+      fetchDrinks(this.prevQuestions, this.allAvailableIngredients, this.allUnavailableIngredients)
         .then(response => {
           this.drinks = response.drinks
           this.loadingDrinks = false
@@ -287,8 +284,7 @@ export default {
         })
     },
     restart() {
-      this.chosenDrinks = []
-      this.unchosenDrinks = []
+      this.prevQuestions = []
       this.drinks = []
       this.pageState = 'questions'
     },
